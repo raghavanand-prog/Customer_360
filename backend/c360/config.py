@@ -30,6 +30,19 @@ class Settings(BaseSettings):
     feature_recommendations: bool = False
     feature_ml_churn: bool = False
 
+    @field_validator("database_url")
+    @classmethod
+    def _normalise_database_url(cls, v: str) -> str:
+        # Managed providers (e.g. Neon via the Vercel integration) hand out a
+        # driver-less `postgresql://`/`postgres://` URL; only psycopg3 is
+        # installed here, so route it to the `+psycopg` dialect explicitly
+        # rather than falling back to SQLAlchemy's psycopg2 default.
+        if v.startswith("postgres://"):
+            return "postgresql+psycopg://" + v[len("postgres://") :]
+        if v.startswith("postgresql://"):
+            return "postgresql+psycopg://" + v[len("postgresql://") :]
+        return v
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]
