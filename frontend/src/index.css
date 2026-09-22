@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-ink font-sans antialiased;
+}
+
+.card {
+  @apply bg-surface-raised border border-surface-border rounded-lg;
+}
+
+.stat-label {
+  @apply text-xs uppercase tracking-wide text-ink-faint font-medium;
+}
+
+table.data-table {
+  @apply w-full text-sm border-collapse;
+}
+table.data-table th {
+  @apply text-left text-xs uppercase tracking-wide text-ink-faint font-medium px-3 py-2 border-b border-surface-border;
+}
+table.data-table td {
+  @apply px-3 py-2 border-b border-surface-border/60 text-ink;
+}
+table.data-table tbody tr:hover {
+  @apply bg-white/[0.02];
+}
+
+.badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
