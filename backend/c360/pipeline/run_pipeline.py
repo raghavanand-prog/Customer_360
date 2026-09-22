@@ -151,17 +151,40 @@ def run(
             order_idx += 1
             from c360.loader.postgres_loader import upsert_dataframe
 
-            customers_pdf = identities.select("canonical_customer_id").distinct().toPandas()
-            customers_pdf["first_name"] = None
-            customers_pdf["last_name"] = None
-            customers_pdf["full_name_display"] = None
-            customers_pdf["primary_email"] = None
-            customers_pdf["primary_phone"] = None
-            customers_pdf["city"] = None
-            customers_pdf["state"] = None
+            from pyspark.sql import Window as _W2
+
+            # §11.3 attribute precedence: CRM > loyalty > app, first non-null wins.
+            crm_attrs = typed_clean["customers_crm"].select(
+                F.lit("crm").alias("source_system"), F.col("crm_customer_id").alias("source_record_id"),
+                F.lit(1).alias("priority"), "first_name", "last_name", "email_norm", "phone_norm", "city", "state")
+            loyalty_attrs = typed_clean["loyalty_members"].select(
+                F.lit("loyalty").alias("source_system"), F.col("loyalty_id").alias("source_record_id"),
+                F.lit(2).alias("priority"), F.initcap("first_name_norm").alias("first_name"),
+                F.initcap("last_name_norm").alias("last_name"), F.col("email_norm"), F.col("phone_norm"),
+                F.col("city"), F.lit(None).cast("string").alias("state"))
+            app_attrs = typed_clean["app_users"].select(
+                F.lit("app").alias("source_system"), F.col("app_user_id").alias("source_record_id"),
+                F.lit(3).alias("priority"), F.lit(None).cast("string").alias("first_name"),
+                F.lit(None).cast("string").alias("last_name"), F.col("email_norm"), F.col("phone_norm"),
+                F.lit(None).cast("string").alias("city"), F.lit(None).cast("string").alias("state"))
+            all_attrs = crm_attrs.unionByName(loyalty_attrs).unionByName(app_attrs)
+
+            attrs_by_customer = all_attrs.join(identities, on=["source_system", "source_record_id"])
+            w = _W2.partitionBy("canonical_customer_id").orderBy("priority")
+            ranked = attrs_by_customer.withColumn("rn", F.row_number().over(w))
+            best = ranked.filter(F.col("rn") == 1).select(
+                "canonical_customer_id", "first_name", "last_name",
+                F.col("email_norm").alias("primary_email"), F.col("phone_norm").alias("primary_phone"),
+                "city", "state")
+            source_counts = identities.groupBy("canonical_customer_id").agg(
+                F.countDistinct("source_system").alias("source_system_count"))
+
+            customers_pdf = best.join(source_counts, "canonical_customer_id", "left").toPandas()
+            customers_pdf["full_name_display"] = (
+                customers_pdf["first_name"].fillna("").str.strip() + " " + customers_pdf["last_name"].fillna("").str.strip()
+            ).str.strip().replace("", None)
             customers_pdf["country_code"] = "IN"
             customers_pdf["account_status"] = "active"
-            customers_pdf["source_system_count"] = 1
             customers_pdf["identity_confidence"] = 0.95
             customers_pdf["needs_review"] = False
             customers_pdf["last_activity_at"] = None
