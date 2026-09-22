@@ -16,18 +16,24 @@ Vercel project currently points at a placeholder
 (`https://customer360-api.example.invalid/api/v1`) until a real backend
 exists.
 
-### The exact remaining step
+### The exact remaining step — confirmed blocker
 
-Provisioning a production PostgreSQL database requires an action in a
-dashboard (accepting a marketplace integration's terms, or creating an
-account with a database host) that cannot be completed via API calls
-alone, and involves a billing/ToS decision that should be made by the
-project owner, not an agent. Repository-side preparation is complete:
+Re-checked directly against the Vercel account behind this deployment:
+`list_integration_configurations` (marketplace view) returns **zero**
+installed integrations on the team — no Postgres/Neon/Supabase connector
+exists to reuse, and there is no Vercel API call that installs one; that
+step is a dashboard action that requires accepting a marketplace
+integration's terms (and, beyond its free tier, a billing decision) —
+appropriately the project owner's call, not something this session
+completed or should complete unilaterally. `VITE_API_BASE_URL` on the
+`customer360-console` Vercel project is still set to a placeholder
+(`https://customer360-api.example.invalid/api/v1`), confirming no backend
+has been wired up yet. Repository-side preparation is complete:
 `backend/vercel.json` + `backend/api/index.py` are ready for Vercel's
 Python runtime to serve the existing FastAPI app with **no further code
 changes**. The remaining steps, once a database exists:
 
-1. Provision Postgres — e.g. in the Vercel dashboard: **Storage → Marketplace Database Providers → Neon** (or Supabase), or any external host (Railway, Render, Supabase, RDS). Copy the connection string.
+1. **Provision Postgres** — in the Vercel dashboard: **Storage → Marketplace Database Providers → Neon** (has a free tier; no card required to start) or **Supabase**, or any external host (Railway, Render, Neon.tech directly, RDS). Copy the connection string it gives you.
 2. Run migrations against it: `MIGRATIONS_DATABASE_URL="<that connection string>" alembic upgrade head` (from `backend/`).
 3. Run the pipeline once against it so the console has real data to show: `python -m c360.pipeline.run_pipeline --input-dir ../data/input --dataset-size small --database-url "<that connection string>"` (after `make generate SIZE=small`).
 4. Create a login user: `python -m c360.cli create-admin --email <you> --password <password>`.
@@ -36,7 +42,8 @@ changes**. The remaining steps, once a database exists:
 
 This is the same sequence `docker-compose.yml` automates locally — Vercel's
 Python runtime is an alternative *target* for the same FastAPI app, not a
-different app.
+different app. Once you've done step 1 and have a connection string, tell
+me and I can complete steps 2–6 for you in this session.
 
 ## Local (Docker Compose)
 
