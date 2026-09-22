@@ -1,5 +1,43 @@
 # Deployment
 
+## Public deployment status (as of this writing)
+
+| Component | Status | URL / detail |
+|---|---|---|
+| Frontend (React console) | **Live on Vercel** | https://customer360-console.vercel.app/ — verified reachable (HTTP 200 on `/` and on a direct client-side route, `/customers`, confirming the SPA rewrite in `frontend/vercel.json` works) |
+| Backend (FastAPI) | **Not deployed** | Blocked on a persistent, internet-reachable PostgreSQL instance. See "The exact remaining step" below |
+| Database | **Not provisioned** | No hosted Postgres was created — see below |
+
+The frontend deployment is real and public, but **without a live backend it
+will show error states on every screen that calls the API** (login
+included) — that is the honest, correct behaviour per this project's own
+rule of never faking API responses, not a bug. `VITE_API_BASE_URL` on the
+Vercel project currently points at a placeholder
+(`https://customer360-api.example.invalid/api/v1`) until a real backend
+exists.
+
+### The exact remaining step
+
+Provisioning a production PostgreSQL database requires an action in a
+dashboard (accepting a marketplace integration's terms, or creating an
+account with a database host) that cannot be completed via API calls
+alone, and involves a billing/ToS decision that should be made by the
+project owner, not an agent. Repository-side preparation is complete:
+`backend/vercel.json` + `backend/api/index.py` are ready for Vercel's
+Python runtime to serve the existing FastAPI app with **no further code
+changes**. The remaining steps, once a database exists:
+
+1. Provision Postgres — e.g. in the Vercel dashboard: **Storage → Marketplace Database Providers → Neon** (or Supabase), or any external host (Railway, Render, Supabase, RDS). Copy the connection string.
+2. Run migrations against it: `MIGRATIONS_DATABASE_URL="<that connection string>" alembic upgrade head` (from `backend/`).
+3. Run the pipeline once against it so the console has real data to show: `python -m c360.pipeline.run_pipeline --input-dir ../data/input --dataset-size small --database-url "<that connection string>"` (after `make generate SIZE=small`).
+4. Create a login user: `python -m c360.cli create-admin --email <you> --password <password>`.
+5. Create a Vercel project for `backend/` (root directory `backend`), and set its environment variables: `DATABASE_URL` (the connection string, `postgresql+psycopg://…`), `JWT_SECRET_KEY` (a long random value), `CORS_ALLOWED_ORIGINS=https://customer360-console.vercel.app`, `ENABLE_DOCS=false`, `C360_ENV=prod`.
+6. Update the frontend's `VITE_API_BASE_URL` env var to the new backend's URL + `/api/v1` and redeploy the frontend.
+
+This is the same sequence `docker-compose.yml` automates locally — Vercel's
+Python runtime is an alternative *target* for the same FastAPI app, not a
+different app.
+
 ## Local (Docker Compose)
 
 `docker-compose.yml` runs: `postgres` (with a role-init script for
