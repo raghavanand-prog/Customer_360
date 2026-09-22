@@ -1,0 +1,21 @@
+# Static identifier denylist (§10.4 S1).
+values:
+  - "0000000000"
+  - "9999999999"
+  - "1234567890"
+  - "+910000000000"
+  - "test@test.com"
+  - "n/a@n/a.com"
+
+email_local_denylist:
+  - info
+  - admin
+  - support
+  - noreply
+  - no-reply
+  - sales
+  - contact
+  - help
+  - billing
+  - hello
+  - office

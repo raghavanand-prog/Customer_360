@@ -1,0 +1,37 @@
+# Identity resolution configuration (§10).
+policies:
+  strip_plus_tags: true
+  strip_gmail_dots: false
+  default_country_code: "+91"
+  allow_cookie_matching: false
+
+screening:
+  max_persons_per_identifier: 8
+  phone_max_distinct_names: 3
+  min_distinct_digits: 7
+
+matching:
+  merge_confidence_threshold: 0.75
+  surname_distance_threshold: 2   # max Levenshtein distance considered "compatible"
+
+clustering:
+  max_iterations: 20
+  max_cluster_size: 50
+
+rules:
+  - id: R-01
+    name: same_authoritative_id
+    namespaces: [crm_id, loyalty_id, app_user_id]
+    confidence: 1.00
+  - id: R-02
+    name: exact_email
+    namespaces: [email]
+    confidence: 0.95
+  - id: R-03
+    name: exact_phone
+    namespaces: [phone]
+    confidence: 0.80
+  - id: R-04
+    name: phone_plus_name_agreement
+    namespaces: [phone]
+    confidence: 0.92
