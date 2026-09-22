@@ -49,11 +49,16 @@ def screen_identifiers(
     is_generic_email = (F.col("identity_namespace") == "email") & F.lower(local_part).isin(local_denylist)
     is_implausible = _is_syntactically_implausible(F.col("identity_value_norm"))
 
-    # S3: frequency threshold -- more than N distinct records across >= 2 sources
+    # S3: frequency threshold -- more than N distinct records across >= 2 sources.
+    # Exact counts via collect_set, not approx_count_distinct: this guard is
+    # precision-critical (it is what neutralises switchboard numbers, §10.4),
+    # and approx_count_distinct is unreliable at the small cardinalities this
+    # operates over -- it is a HyperLogLog estimator built for scale, not for
+    # correctly distinguishing "3 records" from "9 records".
     freq_window = Window.partitionBy("identity_namespace", "value_hash")
-    df = df.withColumn("_distinct_records", F.approx_count_distinct(
-        F.concat_ws(":", "source_system", "source_record_id")).over(freq_window))
-    df = df.withColumn("_distinct_sources", F.approx_count_distinct("source_system").over(freq_window))
+    df = df.withColumn("_distinct_records", F.size(F.collect_set(
+        F.concat_ws(":", "source_system", "source_record_id")).over(freq_window)))
+    df = df.withColumn("_distinct_sources", F.size(F.collect_set("source_system").over(freq_window)))
     max_persons = screening_cfg.get("max_persons_per_identifier", 8)
     is_high_frequency = (F.col("_distinct_records") > max_persons) & (F.col("_distinct_sources") >= 2)
 
@@ -69,7 +74,7 @@ def screen_identifiers(
     if person_attrs is not None and "full_name_norm" in person_attrs.columns:
         joined = df.join(person_attrs, on=["source_system", "source_record_id"], how="left")
         name_window = Window.partitionBy("identity_namespace", "value_hash")
-        joined = joined.withColumn("_distinct_names", F.approx_count_distinct("full_name_norm").over(name_window))
+        joined = joined.withColumn("_distinct_names", F.size(F.collect_set("full_name_norm").over(name_window)))
         phone_names_threshold = screening_cfg.get("phone_max_distinct_names", 3)
         is_s4 = (F.col("identity_namespace") == "phone") & (F.col("_distinct_names") > phone_names_threshold)
         screen_reason = F.when(screen_reason.isNotNull(), screen_reason).when(is_s4, F.lit("S4_phone_name_cardinality")).otherwise(F.lit(None))

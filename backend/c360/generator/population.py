@@ -51,11 +51,22 @@ def _weighted_choice(rng: np.random.Generator, items: list, weights: list[float]
     return items[idx]
 
 
-def _make_email(rng: np.random.Generator, first: str, last: str, domain_pool, n: int = 0) -> str:
+def _make_email(rng: np.random.Generator, first: str, last: str, domain_pool, used: set[str], n: int = 0) -> str:
+    """Two different people named e.g. 'Priya Sharma' are common against a
+    small committed vocabulary (§5.4); a real registration system would
+    disambiguate the second signup, so the generator must too -- an
+    email collision between two *different* true persons is exactly the
+    kind of silent-corruption case identity resolution cannot recover
+    from, and is a generator defect, not a resolver one."""
     domain = _weighted_choice(rng, [d for d, _ in domain_pool], [w for _, w in domain_pool])
     suffix = "" if n == 0 else str(n)
     local = f"{first.lower()}.{last.lower()}{suffix}"
-    return f"{local}@{domain}"
+    candidate = f"{local}@{domain}"
+    while candidate in used:
+        n = int(rng.integers(100, 9999))
+        candidate = f"{first.lower()}.{last.lower()}{n}@{domain}"
+    used.add(candidate)
+    return candidate
 
 
 def _make_phone(rng: np.random.Generator, used: set[str]) -> str:
@@ -79,6 +90,7 @@ def generate_population(
     archetypes = rng.choice(archetype_names, size=n_persons, p=np.asarray(archetype_weights) / sum(archetype_weights))
 
     used_phones: set[str] = set()
+    used_emails: set[str] = set()
     total_days = (date_range_end - date_range_start).days
 
     people: list[Person] = []
@@ -88,8 +100,10 @@ def generate_population(
         last = rng.choice(LAST_NAMES)
         city, state, _ = _weighted_choice(rng, CITY_WEIGHTS, [w for *_, w in CITY_WEIGHTS])
 
-        email1 = _make_email(rng, first, last, EMAIL_DOMAINS, n=int(rng.integers(0, 100)) if rng.random() < 0.15 else 0)
-        email2 = _make_email(rng, first, last, EMAIL_DOMAINS, n=int(rng.integers(100, 999))) if rng.random() < 0.2 else None
+        email1 = _make_email(rng, first, last, EMAIL_DOMAINS, used_emails,
+                              n=int(rng.integers(0, 100)) if rng.random() < 0.15 else 0)
+        email2 = (_make_email(rng, first, last, EMAIL_DOMAINS, used_emails, n=int(rng.integers(100, 999)))
+                  if rng.random() < 0.2 else None)
 
         phone = _make_phone(rng, used_phones)
 
