@@ -14,10 +14,17 @@ target_metadata = None
 
 
 def _database_url() -> str:
-    return os.environ.get(
+    url = os.environ.get(
         "MIGRATIONS_DATABASE_URL",
         os.environ.get("DATABASE_URL", "postgresql+psycopg://c360:c360@localhost:5432/c360"),
     )
+    # Managed providers (e.g. Neon) hand out a driver-less `postgresql://`/
+    # `postgres://` URL; only psycopg3 is installed here, so route it to the
+    # `+psycopg` dialect explicitly rather than SQLAlchemy's psycopg2 default.
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix) and not url.startswith("postgresql+"):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
 
 
 def run_migrations_offline() -> None:
