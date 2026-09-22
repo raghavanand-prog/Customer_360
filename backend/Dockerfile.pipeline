@@ -1,0 +1,21 @@
+# Pipeline image: Java + PySpark for the generator, ingestion, DQ,
+# identity resolution, aggregation, and loader stages.
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    SPARK_LOCAL_IP=127.0.0.1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        openjdk-17-jre-headless libpq5 procps \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-spark.txt .
+RUN pip install --no-cache-dir -r requirements-spark.txt
+
+COPY c360 ./c360
+COPY pyproject.toml .
+
+ENTRYPOINT ["python", "-m"]
+CMD ["c360.pipeline.run_pipeline", "--help"]
