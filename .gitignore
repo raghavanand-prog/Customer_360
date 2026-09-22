@@ -1,0 +1,40 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# data lake & generated data (never committed)
+data/input/
+data/lake/
+data/generated/
+!data/generated/.gitkeep
+
+# node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# spark
+spark-warehouse/
+metastore_db/
+derby.log
+*.log
+
+# ide
+.vscode/
+.idea/
+.DS_Store
+
+# alembic sqlite fallback
+*.db
