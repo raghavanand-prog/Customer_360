@@ -9,12 +9,15 @@ React operations console.
 ## Live Demo
 
 **Frontend (public):** https://customer360-console.vercel.app/
+**API (public):** https://customer360-api.vercel.app/api/v1
 
-The console is live and publicly reachable. It does not yet have a live
-backend attached (see [Deployment status](#deployment-status)) — screens
-that call the API will show real error states rather than fake data,
-because this project never fabricates a response. `docs/SETUP.md` gets the
-full stack running locally against real data in a few commands.
+The console and the FastAPI backend are both live and talking to each
+other. The database (Neon Postgres) is provisioned but its schema hasn't
+been loaded yet, so screens that call the API currently show real error
+states rather than fake data — because this project never fabricates a
+response (see [Deployment status](#deployment-status) for the exact
+remaining step). `docs/SETUP.md` gets the full stack running locally
+against real data in a few commands.
 
 ## Architecture
 
@@ -141,8 +144,8 @@ Full instructions, including Docker Compose: [`docs/SETUP.md`](docs/SETUP.md).
 | Component | Status |
 |---|---|
 | Frontend | **Live** — https://customer360-console.vercel.app/ |
-| Database | **Provisioned** — Neon Postgres (free tier), connected to the frontend's Vercel project |
-| Backend | **Vercel project created, not yet deployed** — one manual "connect store to project" step remains before the API can go live. Exact status and remaining steps: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
+| Backend (FastAPI) | **Live** — https://customer360-api.vercel.app — `/api/v1/health` returns `200`; auth/RBAC guard verified live (`401` with no token) |
+| Database | **Provisioned, schema not yet loaded** — Neon Postgres (free tier), connected to both Vercel projects. Migrations + the data pipeline still need to be run once, locally, against the connection string (never shared with this session). Exact commands: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 
 ## Research Paper
 
