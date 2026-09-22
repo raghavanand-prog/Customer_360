@@ -1,0 +1,54 @@
+# Baseline segment definitions (§14.2). Adding a segment is a config change.
+segments:
+  - id: S-01
+    name: High Value
+    description: Customers whose total spend is at or above the high-value threshold.
+    null_handling: exclude
+    rule_ast: {"op": ">=", "field": "total_spend", "value": {"param": "high_value_spend_threshold"}}
+    thresholds: {"high_value_spend_threshold": 100000}
+  - id: S-02
+    name: New Customer
+    description: First seen within the new-customer window, at most one order.
+    null_handling: exclude
+    rule_ast: {"op": "AND", "children": [
+      {"op": "<=", "field": "days_since_first_seen", "value": {"param": "new_customer_days"}},
+      {"op": "<=", "field": "order_count", "value": 1}]}
+    thresholds: {"new_customer_days": 60}
+  - id: S-03
+    name: Active Customer
+    description: Ordered or visited within the active window.
+    null_handling: exclude
+    rule_ast: {"op": "<=", "field": "days_since_last_order", "value": {"param": "active_days"}}
+    thresholds: {"active_days": 90}
+  - id: S-04
+    name: At Risk
+    description: Purchased before but silent longer than expected, not yet churned.
+    null_handling: exclude
+    rule_ast: {"op": "=", "field": "churn_risk_band", "value": "at_risk"}
+    thresholds: {}
+  - id: S-05
+    name: Churned
+    description: Silent beyond the churn cut-off.
+    null_handling: exclude
+    rule_ast: {"op": "=", "field": "churn_risk_band", "value": "churned"}
+    thresholds: {}
+  - id: S-06
+    name: Cart Abandoner
+    description: Had a cart/checkout session with no purchase since.
+    null_handling: include
+    rule_ast: {"op": "AND", "children": [
+      {"op": ">=", "field": "cart_abandon_sessions_90d", "value": 1},
+      {"op": ">", "field": "days_since_last_order", "value": {"param": "cart_abandon_lookback_days"}}]}
+    thresholds: {"cart_abandon_lookback_days": 14}
+  - id: S-07
+    name: Highly Engaged
+    description: Engagement score in the top band.
+    null_handling: exclude
+    rule_ast: {"op": ">=", "field": "engagement_score", "value": {"param": "high_engagement_score"}}
+    thresholds: {"high_engagement_score": 80}
+  - id: S-08
+    name: Repeat Buyer
+    description: More than one qualifying order.
+    null_handling: exclude
+    rule_ast: {"op": ">=", "field": "order_count", "value": {"param": "repeat_buyer_min_orders"}}
+    thresholds: {"repeat_buyer_min_orders": 2}
