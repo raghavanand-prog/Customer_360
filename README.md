@@ -141,7 +141,8 @@ Full instructions, including Docker Compose: [`docs/SETUP.md`](docs/SETUP.md).
 | Component | Status |
 |---|---|
 | Frontend | **Live** — https://customer360-console.vercel.app/ |
-| Backend | Not deployed — needs a persistent, internet-reachable PostgreSQL instance; repository-side prep (`backend/vercel.json`, `backend/api/index.py`) is done. Exact remaining steps: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
+| Database | **Provisioned** — Neon Postgres (free tier), connected to the frontend's Vercel project |
+| Backend | **Vercel project created, not yet deployed** — one manual "connect store to project" step remains before the API can go live. Exact status and remaining steps: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 
 ## Research Paper
 
