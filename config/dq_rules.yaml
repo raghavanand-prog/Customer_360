@@ -1,0 +1,293 @@
+# Data quality rule catalogue (§9.2). Adding a rule here requires no Python
+# change -- the engine (c360/dq/engine.py) is generic over rule "type".
+version: 3
+datasets:
+  customers_crm:
+    rules:
+      - id: Q-01
+        name: email_present
+        dimension: completeness
+        type: not_null
+        column: email
+        severity: warn
+        threshold_dataset_fail_rate: 0.15
+      - id: Q-02
+        name: phone_present
+        dimension: completeness
+        type: not_null
+        column: phone
+        severity: info
+      - id: Q-03
+        name: names_present
+        dimension: completeness
+        type: not_blank
+        column: first_name
+        severity: reject
+      - id: Q-04
+        name: crm_id_unique
+        dimension: uniqueness
+        type: unique
+        columns: [crm_customer_id]
+        severity: reject
+      - id: Q-10
+        name: email_syntax_valid
+        dimension: validity
+        type: email_syntax
+        column: email_norm
+        applies_when: "email_norm IS NOT NULL"
+        severity: quarantine
+      - id: Q-11
+        name: phone_normalisable
+        dimension: validity
+        type: phone_normalisable
+        column: phone
+        applies_when: "phone IS NOT NULL"
+        severity: warn
+      - id: Q-15
+        name: dob_plausible
+        dimension: validity
+        type: date_range
+        column: date_of_birth_typed
+        min: "1900-01-01"
+        max_expr: "current_date()"
+        max_age_years: 120
+        severity: quarantine
+      - id: Q-16
+        name: account_status_enum
+        dimension: validity
+        type: in_set
+        column: account_status_norm
+        values: ["active", "inactive", "churned"]
+        severity: warn
+      - id: Q-17
+        name: created_before_updated
+        dimension: consistency
+        type: temporal_order
+        column_earlier: created_at_typed
+        column_later: updated_at_typed
+        allow_equal: true
+        severity: quarantine
+      - id: Q-TYPE-created_at
+        name: created_at_typed
+        dimension: timeliness
+        type: type_cast
+        column: created_at
+        severity: quarantine
+
+  loyalty_members:
+    rules:
+      - id: Q-20
+        name: mobile_present
+        dimension: completeness
+        type: not_blank
+        column: mobile
+        severity: reject
+      - id: Q-21
+        name: loyalty_id_unique
+        dimension: uniqueness
+        type: unique
+        columns: [loyalty_id]
+        severity: reject
+      - id: Q-22
+        name: points_balance_range
+        dimension: validity
+        type: numeric_range
+        column: points_balance_typed
+        min: 0
+        max: 1000000
+        severity: quarantine
+      - id: Q-23
+        name: tier_enum
+        dimension: validity
+        type: in_set
+        column: tier
+        values: ["bronze", "silver", "gold", "platinum"]
+        severity: warn
+      - id: Q-24
+        name: phone_normalisable_loyalty
+        dimension: validity
+        type: phone_normalisable
+        column: mobile
+        severity: warn
+
+  app_users:
+    rules:
+      - id: Q-30
+        name: email_present_app
+        dimension: completeness
+        type: not_blank
+        column: email
+        severity: reject
+      - id: Q-31
+        name: email_syntax_valid_app
+        dimension: validity
+        type: email_syntax
+        column: email_norm
+        applies_when: "email_norm IS NOT NULL"
+        severity: quarantine
+      - id: Q-32
+        name: app_user_id_unique
+        dimension: uniqueness
+        type: unique
+        columns: [app_user_id]
+        severity: reject
+      - id: Q-33
+        name: signup_before_last_login
+        dimension: consistency
+        type: temporal_order
+        column_earlier: signup_ts_typed
+        column_later: last_login_ts_typed
+        allow_equal: true
+        applies_when: "last_login_ts_typed IS NOT NULL"
+        severity: warn
+      - id: Q-34
+        name: signup_ts_not_future
+        dimension: timeliness
+        type: timestamp_not_future
+        column: signup_ts_typed
+        skew_tolerance_s: 300
+        severity: quarantine
+      - id: Q-35
+        name: last_login_not_future
+        dimension: timeliness
+        type: timestamp_not_future
+        column: last_login_ts_typed
+        skew_tolerance_s: 300
+        severity: warn
+
+  products:
+    rules:
+      - id: Q-40
+        name: sku_unique
+        dimension: uniqueness
+        type: unique
+        columns: [sku]
+        severity: warn
+      - id: Q-41
+        name: unit_price_positive
+        dimension: validity
+        type: numeric_range
+        column: unit_price_typed
+        min: 0.01
+        max: 10000000
+        severity: quarantine
+      - id: Q-42
+        name: currency_known
+        dimension: validity
+        type: in_set
+        column: currency
+        values: ["INR", "USD"]
+        severity: quarantine
+      - id: Q-43
+        name: category_name_consistent
+        dimension: consistency
+        type: set_consistency
+        key_columns: [category_id]
+        value_column: category_name
+        severity: warn
+
+  orders:
+    rules:
+      - id: Q-50
+        name: order_id_unique
+        dimension: uniqueness
+        type: duplicate_composite
+        columns: [order_id]
+        severity: warn
+      - id: Q-51
+        name: order_type_enum
+        dimension: validity
+        type: in_set
+        column: order_type
+        values: ["sale", "refund"]
+        severity: reject
+      - id: Q-52
+        name: gross_amount_non_negative
+        dimension: validity
+        type: numeric_range
+        column: gross_amount_typed
+        min: 0
+        max: 100000000
+        applies_when: "order_type = 'sale'"
+        severity: quarantine
+      - id: Q-53
+        name: order_ts_not_future
+        dimension: timeliness
+        type: timestamp_not_future
+        column: order_ts_typed
+        skew_tolerance_s: 300
+        severity: quarantine
+      - id: Q-54
+        name: order_ts_not_epoch
+        dimension: timeliness
+        type: timestamp_range
+        column: order_ts_typed
+        min: "2000-01-01T00:00:00Z"
+        max: "2100-01-01T00:00:00Z"
+        severity: quarantine
+      - id: Q-55
+        name: currency_known_orders
+        dimension: validity
+        type: in_set
+        column: currency
+        values: ["INR", "USD"]
+        severity: quarantine
+
+  order_items:
+    rules:
+      - id: Q-60
+        name: line_key_unique
+        dimension: uniqueness
+        type: unique
+        columns: [order_id, line_number]
+        severity: warn
+      - id: Q-61
+        name: quantity_positive
+        dimension: validity
+        type: numeric_range
+        column: quantity_typed
+        min: 1
+        max: 10000
+        severity: quarantine
+      - id: Q-62
+        name: order_id_resolves
+        dimension: integrity
+        type: referential
+        column: order_id
+        ref_dataset: orders
+        ref_column: order_id
+        severity: quarantine
+
+  support_tickets:
+    rules:
+      - id: Q-70
+        name: requester_email_valid
+        dimension: validity
+        type: email_syntax
+        column: requester_email_norm
+        applies_when: "requester_email_norm IS NOT NULL"
+        severity: quarantine
+      - id: Q-71
+        name: satisfaction_score_range
+        dimension: validity
+        type: numeric_range
+        column: satisfaction_score_typed
+        min: 1
+        max: 5
+        applies_when: "satisfaction_score_typed IS NOT NULL"
+        severity: quarantine
+      - id: Q-72
+        name: first_response_after_created
+        dimension: consistency
+        type: temporal_order
+        column_earlier: created_at_typed
+        column_later: first_response_at_typed
+        allow_equal: true
+        applies_when: "first_response_at_typed IS NOT NULL"
+        severity: warn
+      - id: Q-73
+        name: ticket_id_unique
+        dimension: uniqueness
+        type: unique
+        columns: [ticket_id]
+        severity: reject
