@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Customer360</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="ieee.css" />
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="off" type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Customer360</h1>
+</header>
+<h1
+id="customer360-an-end-to-end-customer-data-integration-and-identity-resolution-platform">Customer360:
+An End-to-End Customer Data Integration and Identity Resolution
+Platform</h1>
+<p><strong>Raghav Anand</strong> <em>MCA, CHRIST (Deemed to be
+University), Bangalore, India</em></p>
+<hr />
+<h2 id="abstract">Abstract</h2>
+<p>Organisations with any digital footprint accumulate customer data
+across systems that were never designed to agree with each other — a
+CRM, a loyalty programme, an application registration service, an order
+system, and a clickstream each hold a partial, differently-keyed view of
+the same person. This paper presents Customer360, a batch-oriented
+customer data platform that (i) generates a reproducible, seeded
+synthetic dataset with an explicit, declared defect model across eight
+source systems; (ii) validates and classifies every ingested record
+through a configurable, six-dimension data-quality engine; (iii)
+resolves fragmented records into canonical customers through a
+deterministic identity-resolution pipeline — namespaced identifier
+screening, ranked deterministic match rules, iterative connected
+components, and post-hoc cluster guards — with canonical identifiers
+that are stable across re-runs and a full merge/split audit trail; (iv)
+computes behavioural and transactional customer metrics (RFM, historical
+customer lifetime value, churn risk banding, session aggregation) using
+Apache Spark’s DataFrame API; and (v) serves the resulting unified
+profiles, rule-defined audience segments, and analytics through a
+role-based, JWT-authenticated REST API and a React operations console.
+The identity-resolution component is evaluated against ground-truth
+labels retained by the generator (and never exposed to the resolution
+pipeline), yielding a measured pairwise precision of 0.994 and recall of
+0.857 (F1 = 0.920) on a 1,000-person synthetic population. The paper
+documents this measurement honestly, including a ground-truth
+construction defect discovered and corrected during evaluation (Section
+X-B), because the correction — and the reasoning that led to it — is
+itself part of the platform’s reproducibility story. All processing in
+this work is batch-oriented over synthetic data at a small-to-moderate
+scale; no claim of real-time processing, production-scale throughput, or
+evaluation on production-scale data is made.</p>
+<p><strong>Keywords</strong> — entity resolution, record linkage,
+identity resolution, data quality, data integration, customer data
+platform, Apache Spark, PostgreSQL, deterministic matching, connected
+components.</p>
+<hr />
+<h2 id="i.-introduction">I. Introduction</h2>
+<p>A single human being routinely exists as several disconnected records
+inside one organisation: a CRM record entered by a salesperson, a
+loyalty account created at a point of sale, an application account
+created at sign-up, and an order placed as a guest checkout with only an
+email address. Each system is internally consistent and individually
+correct; the problem is that none of them, on its own, can answer the
+question a business actually needs answered — <em>who is this person,
+and what is their entire history with us?</em> Answering it requires
+solving two distinct engineering problems at once. First, the input data
+is not merely incomplete but adversarially messy: missing fields,
+inconsistent formatting, invalid values, and duplicate deliveries are
+the normal condition of production data pipelines, not an edge case [4],
+[5]. Second, linking records that refer to the same person is a graph
+problem with an asymmetric cost structure: failing to link two records
+understates a customer’s history (recoverable), while incorrectly
+linking two different people’s records exposes one person’s data inside
+another’s profile and corrupts every downstream metric for both
+(materially worse) [2], [3]. This paper describes a system built to take
+both problems seriously rather than approximate them with a single
+<code>JOIN ON email</code>.</p>
+<p>Customer360 is a full, working implementation rather than a design
+document: a Python-based synthetic data generator with a declared defect
+model, a PySpark data-quality and identity-resolution pipeline, a
+normalised-and-denormalised PostgreSQL serving schema, a FastAPI backend
+with role-based access control, and a React console. Section IV
+describes the system architecture; Sections V–IX describe each
+functional layer in the order data flows through the system; Sections
+X–XI describe the experimental setup actually run and the results
+actually measured; Sections XII–XIV discuss the design honestly,
+including its limitations; Section XV concludes.</p>
+<h2 id="ii.-related-work">II. Related Work</h2>
+<p><strong>Record linkage and entity resolution.</strong> The
+probabilistic foundation of record linkage was established by Fellegi
+and Sunter [1], who framed matching as a classification problem over
+comparison vectors with defined false-match and false-non-match
+probability bounds. Christen [2] and Elmagarmid et al. [3] survey the
+field broadly, covering blocking strategies, comparison functions, and
+classification methods; Getoor and Machanavajjhala [4] frame the
+practical open challenges — scalability, schema heterogeneity, and the
+precision/recall trade-off under real operational constraints — that
+motivate treating entity resolution as a production engineering problem,
+not only a statistical one. Customer360’s identity resolution is
+<strong>deterministic</strong>, not probabilistic: it uses exact
+matching within namespaced identifier spaces (email, phone, CRM ID, app
+user ID) governed by ranked rules with fixed confidence weights, in the
+tradition of rule-based linkage systems, rather than a trained
+classifier over similarity scores. This is a deliberate, stated design
+choice (Section VI-A), not an omission — it trades some recall for
+explainability, which is what makes an individual merge decision
+auditable.</p>
+<p><strong>Data integration.</strong> Halevy et al. [6] and Doan et
+al. [7] frame data integration broadly as reconciling heterogeneous
+schemas and sources into a queryable unified view; Customer360’s
+conformed entity model (Section V) and namespaced identifier abstraction
+are an instance of this pattern applied narrowly to customer data.
+Stonebraker et al. [8] describe an industrial entity-resolution and
+data-curation system (Data Tamer) built around similar practical
+concerns — human-in-the-loop review for low-confidence matches, and a
+probabilistic core paired with deterministic rules — that parallel
+Customer360’s own review-queue mechanism for low-confidence clusters
+(Section VI-D).</p>
+<p><strong>Data quality.</strong> Wang and Strong [9] establish the
+multi-dimensional framework for data quality (accuracy, completeness,
+consistency, timeliness, and related dimensions defined relative to
+<em>fitness for use</em> by a consumer) that Customer360’s six-dimension
+scoring model (Section V-B) follows directly. Redman [5] documents the
+operational cost of ignoring data quality at the point of ingestion,
+which motivates this system’s choice to classify and quarantine every
+record rather than silently drop or “fix” bad values.</p>
+<p><strong>Distributed processing and the serving stack.</strong> Apache
+Spark’s DataFrame API and Catalyst optimiser [10], [14] underlie every
+transformation-heavy stage of this pipeline; PostgreSQL [13] is the
+serving layer; FastAPI [15] and Pydantic provide the validated API
+contract; JWT [12] and Argon2 [11] are the authentication and
+password-hashing mechanisms. Security practices follow the OWASP Top Ten
+[16] where applicable (parameterised queries, no client-side trust
+boundary for authorisation).</p>
+<h2 id="iii.-problem-formulation">III. Problem Formulation</h2>
+<p>Given <span class="math inline">\(N\)</span> source records drawn
+from <span class="math inline">\(S\)</span> heterogeneous source
+systems, each record carrying a subset of identifiers drawn from a fixed
+set of namespaces <span class="math inline">\(\mathcal{N} =
+\{\text{email}, \text{phone}, \text{crm\_id}, \text{loyalty\_id},
+\text{app\_user\_id}, \text{device\_cookie}\}\)</span>, the task is to
+partition the <span class="math inline">\(N\)</span> records into
+clusters <span class="math inline">\(C_1, \ldots, C_k\)</span> such that
+each cluster corresponds to exactly one real person, while:</p>
+<ol type="1">
+<li><strong>maximising recall</strong> — correctly grouping records that
+do belong to the same person, even when linked only transitively through
+a chain of different identifiers across different source systems;</li>
+<li><strong>preserving precision</strong> — never grouping records
+belonging to different people, even when they share a low-specificity
+identifier (a shared household phone line, a generic <code>info@</code>
+mailbox, a many-to-one switchboard number);</li>
+<li><strong>producing a stable, deterministic result</strong> — an
+unchanged input dataset must produce identical cluster identifiers on
+every re-run, and a new record that bridges two existing clusters must
+produce a recorded <em>merge</em> event rather than an arbitrary
+re-identification of the whole population.</li>
+</ol>
+<p>Because the two failure modes are not symmetric in cost — an
+under-merged pair is an annoyance, an over-merged pair is a privacy
+incident — the system is explicitly biased toward precision: a candidate
+link whose evidence is weak or contradictory is routed to a review queue
+rather than merged (Section VI-C, VI-D).</p>
+<h2 id="iv.-system-architecture">IV. System Architecture</h2>
+<p>Customer360 follows a four-layer batch pipeline, computed within a
+single Spark session per run rather than materialised to intermediate
+storage between every stage (a documented scope reduction; see Section
+XIII):</p>
+<pre><code>Synthetic Data Generator (seeded, Python)
+        │  writes 9 source files
+        ▼
+Ingestion  ──▶  Type &amp; Validate  ──▶  Clean &amp; Normalise
+        │                                    │
+        │                                    ▼
+        │                          Data Quality Engine
+        │                    (accept / warn / quarantine / reject)
+        ▼
+Identity Edge Construction ──▶ Identity Resolution ──▶ Canonical IDs
+        │
+        ▼
+Order / Customer Aggregation (RFM, CLV, churn, sessionisation)
+        │
+        ▼
+PostgreSQL Serving Layer  ──▶  FastAPI (JWT + RBAC)  ──▶  React Console</code></pre>
+<p>Each layer is implemented as an independent, individually testable
+Python module (<code>c360.pipeline.readers</code>,
+<code>c360.pipeline.typing_clean</code>, <code>c360.dq</code>,
+<code>c360.identity</code>, <code>c360.pipeline.aggregate</code>,
+<code>c360.loader</code>), orchestrated by a single Typer CLI
+(<code>c360.pipeline.run_pipeline</code>) that records per-stage row
+counts, durations, and status to a <code>pipeline_runs</code> /
+<code>pipeline_stage_runs</code> audit pair in PostgreSQL. Thirteen such
+stages execute in a fixed topological order per run (Table I).</p>
+<p><strong>Table I. Pipeline stage catalogue</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Engine</th>
+<th>Input → Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ingest + type + clean (×7 datasets)</td>
+<td>PySpark</td>
+<td>Raw CSV/JSONL → typed, cleaned DataFrame</td>
+</tr>
+<tr class="even">
+<td>DQ evaluation (×7 datasets)</td>
+<td>PySpark</td>
+<td>Cleaned records → accept/warn/quarantine/reject</td>
+</tr>
+<tr class="odd">
+<td>Identity resolution</td>
+<td>PySpark</td>
+<td>Namespaced identifier edges → canonical customer IDs</td>
+</tr>
+<tr class="even">
+<td>Load customers + identities</td>
+<td>Python/psycopg</td>
+<td>Resolved clusters → PostgreSQL upsert</td>
+</tr>
+<tr class="odd">
+<td>Order attribution</td>
+<td>PySpark</td>
+<td>Orders + identity lookup → canonical-customer-attributed orders</td>
+</tr>
+<tr class="even">
+<td>Load orders</td>
+<td>Python/psycopg</td>
+<td>Deduplicated orders → PostgreSQL upsert</td>
+</tr>
+<tr class="odd">
+<td>Aggregate customer metrics</td>
+<td>PySpark</td>
+<td>Orders → RFM, CLV, churn band, engagement score</td>
+</tr>
+</tbody>
+</table>
+<p>A deliberate architectural boundary separates the transformation tier
+from the serving tier: no module under <code>c360.api</code>,
+<code>c360.repositories</code>, or <code>c360.loader</code> imports
+PySpark, and no SQL string is constructed outside
+<code>c360.repositories</code> or the parameterised segment compiler
+(<code>c360.segments.compiler</code>). This means the API process can
+start and serve traffic without a Spark installation present, and every
+value that reaches a SQL statement from outside the codebase does so as
+a bound parameter, never as interpolated text.</p>
+<h2 id="v.-data-generation-and-data-quality">V. Data Generation and Data
+Quality</h2>
+<h3 id="a.-synthetic-data-generation">A. Synthetic data generation</h3>
+<p>Real customer data cannot be used for a public portfolio artefact, so
+Customer360 generates its own — but “synthetic” does not mean
+“structureless.” The generator (<code>c360.generator</code>) builds an
+in-memory population of true persons first, each assigned a behavioural
+archetype (loyal high-value, regular, occasional, browser-no-buy,
+churned, newly-registered, bot-like) drawn with declared weights, and
+only then <em>projects</em> that population into nine per-source files
+(a CRM export, a semicolon-delimited loyalty export, JSON-lines app
+registrations, a product catalogue, JSON-lines orders and order line
+items, gzip-compressed date-partitioned clickstream events, support
+tickets, and marketing send/open/click events). Defects — missing
+fields, non-canonical phone formats, invalid emails, duplicated
+deliveries, inconsistent country names, a handful of deliberately shared
+“switchboard” phone numbers, and 26 further defect types — are injected
+onto this otherwise-coherent population as the final generation step,
+each at a declared rate. Every random draw is taken from a single
+<code>numpy.random.Generator(PCG64(seed))</code> threaded explicitly
+through the generator (no module calls the global <code>random</code>
+state), so that a fixed seed produces byte-identical output across runs
+— verified directly by an automated test that runs the generator twice
+and compares SHA-256 digests of all nine output files.</p>
+<p>Critically, the generator also writes a <strong>ground-truth identity
+mapping</strong> —
+<code>(source_system, source_record_id) → true_person_id</code> for
+every record it wrote — to a file the identity-resolution pipeline never
+reads. This file exists solely so that identity-resolution quality can
+be <em>measured</em> rather than <em>asserted</em> (Section X-A).</p>
+<h3 id="b.-data-quality-engine">B. Data quality engine</h3>
+<p>Every one of the seven tabular/JSON-line source datasets passes
+through a generic, configuration-driven data-quality engine
+(<code>c360.dq.engine.evaluate</code>) before any business logic touches
+it. Forty rules, declared in a single YAML file and spanning all six of
+Wang and Strong’s data quality dimensions [9] — completeness, validity,
+uniqueness, consistency, referential integrity, and timeliness — are
+each compiled to a Spark <code>Column</code> expression by a small type
+registry (18 rule <em>types</em>: <code>not_null</code>,
+<code>regex</code>, <code>numeric_range</code>,
+<code>referential</code>, <code>temporal_order</code>,
+<code>email_syntax</code>, and others), so that adding a rule is a
+configuration change, never a code change. Every rule for a dataset is
+evaluated in a single pass, and every record-count metric used for
+scoring is gathered in one <code>agg()</code> action rather than one
+<code>count()</code> call per metric — a deliberate application of
+Spark’s lazy-evaluation model to avoid triggering thirty-plus separate
+jobs per dataset.</p>
+<p>Each record is classified <code>accepted</code>,
+<code>accepted_with_warning</code>, <code>quarantined</code>, or
+<code>rejected</code> according to the highest-severity rule it fails
+(<code>info &lt; warn &lt; quarantine &lt; reject</code>); records are
+<strong>never dropped</strong> — quarantined and rejected records remain
+queryable, carrying the exact rule identifiers and offending values that
+caused their classification. The per-dataset score is a weighted
+combination of six dimension scores, each of which excludes
+non-applicable records from its denominator so that a narrowly-scoped
+rule cannot inflate the apparent score. An automated test enforces the
+resulting invariant directly: <span
+class="math inline">\(\text{accepted} + \text{warned} +
+\text{quarantined} + \text{rejected} = \text{ingested}\)</span>, for
+every dataset, on every run.</p>
+<h2 id="vi.-identity-resolution-methodology">VI. Identity Resolution
+Methodology</h2>
+<p>Identity resolution is the paper’s primary technical contribution and
+the component evaluated quantitatively in Section XI.</p>
+<h3 id="a.-namespaces-and-normalisation">A. Namespaces and
+normalisation</h3>
+<p>Matching is defined <strong>within</strong> a namespace only — an
+email value is never compared to a phone value — because cross-type
+comparison is not merely unhelpful but structurally meaningless, and
+Customer360 enforces this by construction rather than by convention: the
+identifier long table (<code>identity_edges_input</code>) carries
+<code>(source_system, source_record_id, identity_namespace, identity_value_norm)</code>
+rows, and every downstream operation partitions or blocks on
+<code>identity_namespace</code> first. Six namespaces are defined:
+<code>email</code>, <code>phone</code>, <code>crm_id</code>,
+<code>loyalty_id</code>, <code>app_user_id</code>, and
+<code>device_cookie</code>; the last is deliberately excluded from
+matching by default (a device is shared across people far more often
+than an email address is) and used only for session attribution within
+an already-resolved identity, not for linking two people together — a
+restraint that is itself a defensible design decision, not an
+omission.</p>
+<h3 id="b.-screening-the-over-merge-guard">B. Screening (the over-merge
+guard)</h3>
+<p>Before any candidate edge is generated, every identifier value is
+screened against five checks: a static denylist of known sentinel values
+(<code>0000000000</code>, <code>test@test.com</code>); a format denylist
+of role-account email local-parts (<code>info@</code>,
+<code>noreply@</code>, …); a frequency threshold — an identifier value
+attached to more than eight distinct source records across two or more
+source systems is presumed to be a switchboard number or shared mailbox
+and is stripped of matching power; a phone-specific cardinality check (a
+phone number attached to more than three distinct normalised full names
+is similarly stripped); and a syntactic-implausibility check for values
+that are a single digit repeated throughout. A screened identifier is
+never deleted and never causes its record to be dropped — it is retained
+for display and search, only excluded from generating a match edge — and
+every screening decision is written to an audit table with the
+namespace, a masked display value, and the specific screen that fired,
+so that “why didn’t these two records link?” has a queryable answer.</p>
+<h3 id="c.-match-rules-and-blocking">C. Match rules and blocking</h3>
+<p>Candidate edges are generated by four ranked, confidence-weighted
+deterministic rules (Table II), applied only to <em>specific</em>
+(unscreened) identifiers.</p>
+<p><strong>Table II. Match rules</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule</th>
+<th>Condition</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>R-01</td>
+<td>Shared authoritative ID (CRM ID / loyalty ID / app user ID)</td>
+<td>1.00</td>
+</tr>
+<tr class="even">
+<td>R-02</td>
+<td>Exact normalised email</td>
+<td>0.95</td>
+</tr>
+<tr class="odd">
+<td>R-03</td>
+<td>Exact normalised phone</td>
+<td>0.80</td>
+</tr>
+<tr class="even">
+<td>R-04</td>
+<td>Exact phone <strong>and</strong> surname match <strong>and</strong>
+first-name/initial compatibility</td>
+<td>0.92</td>
+</tr>
+</tbody>
+</table>
+<p>Candidate pairs are never produced by a pairwise cross-join. Instead,
+the identifier long table is grouped by
+<code>(namespace, value_hash)</code> — a shuffle-and-group operation,
+<span class="math inline">\(O(N \log N)\)</span> — and edges are
+generated only within each (typically small, post-screening) group;
+R-04’s additional name-compatibility predicate is evaluated only within
+that already-small block. This is what makes the approach tractable at
+scale without resorting to an approximate or sampled comparison
+space.</p>
+<h3 id="d.-cluster-computation-and-guards">D. Cluster computation and
+guards</h3>
+<p>Given the resulting edge set, connected components are computed
+iteratively using a min-label-propagation algorithm implemented directly
+on Spark’s DataFrame API (no GraphFrames dependency — a stated,
+deliberate choice: a graph library whose failure modes are unfamiliar
+was judged a worse trade than roughly sixty lines of directly auditable
+iteration). Each vertex starts labelled with its own identifier; on each
+iteration, every vertex adopts the minimum label among its neighbours
+(propagated across the edge set in both directions), and the loop
+terminates when no label changes. The label set is checkpointed after
+every iteration (<code>localCheckpoint</code>), which is necessary and
+non-obvious: without it, the Spark query plan grows linearly with the
+number of iterations and the job fails on plan size long before it fails
+on data size. Non-convergence within a configured iteration bound
+(default 20) fails the stage explicitly rather than emitting a
+partially-merged result.</p>
+<p>Three guards run after connected components resolve a raw cluster,
+and all three <em>decline to merge</em> rather than delete any
+record:</p>
+<ul>
+<li><strong>Maximum cluster size</strong> — an oversized cluster has its
+lowest-confidence edges removed until every resulting sub-cluster is
+within bound;</li>
+<li><strong>Minimum path confidence</strong> — edges below the
+configured merge threshold (default 0.75) are cut;</li>
+<li><strong>Attribute conflict</strong> — a two-member cluster held
+together by a single, <em>unreinforced</em> phone-only edge (i.e. one
+for which the stronger R-04 name-compatible variant did not also fire)
+is treated as ambiguous and cut, because the absence of a reinforcing
+name match is itself the signal that two different people happen to
+share a phone number.</li>
+</ul>
+<p>Every cut edge and its reason is written to a review queue rather
+than silently discarded.</p>
+<h3 id="e.-canonical-identifier-stability">E. Canonical identifier
+stability</h3>
+<p>A canonical identifier is minted deterministically from the
+lexicographically-smallest member key in a brand-new cluster
+(<code>CX</code> + a truncated SHA-256 digest), which makes a
+from-scratch rebuild on unchanged input reproduce identical identifiers.
+Across runs, each cluster’s members are checked against the previous
+run’s identifier assignments: an unchanged or grown cluster with exactly
+one distinct prior identifier reuses it; a cluster whose members carried
+two or more distinct prior identifiers is a <strong>merge</strong>,
+resolved by survivor selection (most member records, then earliest
+first-seen run, then lexicographic order), with every non-surviving
+identifier recorded in a crosswalk table and a
+<code>cluster_merged</code> audit event naming the survivor and its
+absorbed identifiers; a prior identifier whose members now span multiple
+new clusters is a <strong>split</strong>, similarly audited. An API
+request for a merged identifier resolves transparently to its survivor;
+a request for a split identifier returns an explicit
+<code>409 identity_ambiguous</code> response rather than silently
+guessing a successor.</p>
+<h2 id="vii.-distributed-data-processing-and-customer-analytics">VII.
+Distributed Data Processing and Customer Analytics</h2>
+<p>Order enrichment, customer-level aggregation, and event
+sessionisation are implemented as Spark DataFrame transformations over
+window specifications (<code>c360.pipeline.aggregate</code>). Net order
+value is computed as gross amount less discount plus shipping plus tax;
+a customer’s Recency, Frequency, and Monetary scores are each computed
+with <code>NTILE(5)</code> over the appropriate ordering (ascending
+recency-in-days, ascending order count, ascending total spend),
+producing a three-digit RFM segment code per customer; a customer’s
+churn-risk band is a four-way classification
+(<code>no_purchase_history</code>, <code>active</code>,
+<code>at_risk</code>, <code>churned</code>) driven by
+days-since-last-order thresholds; historical customer lifetime value is
+total spend net of refunds. Web-event sessionisation groups events by
+<code>(canonical_customer_id, device_cookie)</code>, computing a running
+session index via a window <code>sum()</code> over a
+30-minute-inactivity indicator derived from <code>lag()</code> — the
+canonical pattern for sessionisation with window functions, and one of
+the concrete places this system demonstrates window-function use beyond
+the RFM ranking itself.</p>
+<h2 id="viii.-segmentation-and-serving-layer">VIII. Segmentation and
+Serving Layer</h2>
+<p>Audience segments are declarative, not hard-coded: a segment is a
+JSON rule abstract syntax tree (supporting
+<code>AND</code>/<code>OR</code>/<code>NOT</code>, comparison and
+set-membership operators, and configurable three-valued-logic NULL
+handling) validated against a field registry before it is ever
+evaluated, then compiled to a parameterised SQL predicate
+(<code>c360.segments.compiler.compile_ast</code>) — every literal value
+in a rule becomes a bound parameter, never string-interpolated text,
+which is a structural (not merely a sanitisation-based) defence against
+SQL injection. Eight baseline segments (High Value, New Customer, Active
+Customer, At Risk, Churned, Cart Abandoner, Highly Engaged, Repeat
+Buyer) are defined purely in configuration. Each evaluation run performs
+a full recompute — a deliberate simplification over incremental
+membership maintenance, justified because incremental maintenance is
+precisely where membership silently drifts from its definition — and the
+resulting membership set is diffed against the previous run to produce
+an append-only <code>entered</code>/<code>exited</code> event log
+alongside the replaced current membership snapshot, so that a sudden
+audience-size change is always attributable to a specific run rather
+than treated as suspicious.</p>
+<p>The PostgreSQL serving schema (34 tables) separates three groups with
+different normalisation rules by design: a 3NF, foreign-key-constrained
+core domain (customers, identities, orders, products, sessions, events);
+a deliberately denormalised, disposable analytical layer
+(<code>customer_metrics</code> and related aggregate tables) rebuilt in
+full on every run, where duplication carries no consistency risk because
+nothing but the pipeline ever writes to it; and a 3NF, append-mostly
+operational layer (pipeline runs, data-quality results, identity audit
+trail, users, roles, audit log).</p>
+<h2 id="ix.-api-security-and-operations-console">IX. API, Security, and
+Operations Console</h2>
+<p>The FastAPI backend exposes authentication, customer search and
+profile, segment, analytics, data-quality, pipeline-run, and health
+endpoints under <code>/api/v1</code>, with request/response validation
+via Pydantic and an automatic OpenAPI schema. Authentication uses JSON
+Web Tokens [12] — a short-lived access token and a longer-lived refresh
+token, the latter tracked in PostgreSQL by a hashed <code>jti</code> and
+a <code>family_id</code> so that presenting an already-revoked refresh
+token revokes the entire token family (reuse detection). Passwords are
+hashed with Argon2id [11], the memory-hard function selected as the
+winner of the Password Hashing Competition and recommended for new
+systems over PBKDF2/bcrypt specifically because its memory cost resists
+GPU/ASIC-parallelised attacks. Four roles — viewer, analyst, data
+engineer, admin — are strictly ordered, and every endpoint declares its
+minimum required role as a FastAPI dependency, enforced server-side on
+every request; personally identifying fields (email, phone) are masked
+server-side for masked-role responses before serialisation, so that no
+unmasked value is ever transmitted to a client that should not see it,
+regardless of what that client’s own code does. The React/TypeScript
+console (11 operator screens: overview, customer search, Customer 360
+profile, segments and segment detail, analytics, data quality, pipeline
+runs, system health, plus authentication) consumes this API exclusively
+— no client-side mock data exists anywhere in the shipped frontend.</p>
+<h2 id="x.-experimental-setup">X. Experimental Setup</h2>
+<h3 id="a.-evaluation-methodology">A. Evaluation methodology</h3>
+<p>Because the generator retains ground truth that the pipeline never
+sees (Section V-A), identity-resolution quality is measured, not
+asserted. <code>c360.eval.identity_eval</code> loads the ground-truth
+<code>(source_system, source_record_id) → true_person_id</code> mapping
+and the resolved
+<code>(source_system, source_record_id) → canonical_customer_id</code>
+mapping, and computes <strong>pairwise precision and recall over blocked
+pairs</strong> — pairs of source records sharing either a
+<code>true_person_id</code> or a <code>canonical_customer_id</code> —
+rather than materialising all <span
+class="math inline">\(O(N^2)\)</span> pairs. Precision is the fraction
+of resolver-merged pairs that are genuinely the same person; recall is
+the fraction of genuinely-same-person pairs the resolver actually
+merged. Over-merge and under-merge incident counts are reported
+separately, at cluster granularity, because a single precision/recall
+number can obscure whether errors are concentrated in a few large
+clusters or spread thinly across many small ones.</p>
+<h3 id="b.-a-ground-truth-construction-defect-found-and-corrected">B. A
+ground-truth construction defect, found and corrected</h3>
+<p>The first evaluation run measured a pairwise precision of
+approximately 0.27 — a result inconsistent with the resolver’s behaviour
+on every hand-built worked-example fixture (Section XI-B), which was the
+signal that something was wrong with the <em>measurement</em>, not
+necessarily the <em>resolver</em>. Inspecting the specific pairs the
+evaluator counted as over-merged surfaced the cause directly: the
+ground-truth file was originally constructed by a loop in the
+generator’s orchestration code that recomputed a sequential CRM-record
+counter <em>separately</em> from the function that actually wrote CRM
+rows to disk. The writer function, however, emits <strong>two</strong>
+rows for one person whenever a within-source duplicate defect (a
+deliberately seeded case: the same person appearing twice in the CRM
+export under different record IDs) is injected for that person — and the
+moment the first such duplicate occurred in generation order, the
+externally-recomputed counter silently fell out of alignment with the
+record IDs the writer had actually assigned, corrupting the ground-truth
+mapping for every person generated afterward.</p>
+<p>The fix was to make the writer functions themselves return the exact
+<code>(record_id, true_person_id)</code> pairs they wrote, and have the
+ground-truth file consume those pairs directly rather than
+reconstructing them externally. A second, independent issue was found in
+the same debugging session: the frequency-based screening guard (Section
+VI-B) used Spark’s <code>approx_count_distinct</code> — a HyperLogLog
+cardinality estimator built for counting distinct values at scale — to
+decide whether an identifier was shared by “too many” distinct records
+at a per-identifier cardinality of single digits, where a probabilistic
+estimator’s error is large relative to the threshold; switching to an
+exact <code>collect_set</code>-based count resolved a small number of
+under-screened high-frequency identifiers. Both fixes, and the reasoning
+that led to them, are recorded as architecture decision records (ADR-15,
+ADR-16) in the project repository rather than silently folded into the
+commit history, because a debugging narrative that identifies “is this
+the algorithm or the harness” is itself evidence of engineering rigour,
+and erasing it would remove exactly the part of the story worth
+keeping.</p>
+<h3 id="c.-scale-of-evaluation">C. Scale of evaluation</h3>
+<p>All results in this paper are measured on the generator’s
+<code>small</code> size profile: 1,000 true persons, projected into
+approximately 550 CRM records, 400 loyalty records, and 590 app
+registration records (source coverage is partial and overlapping by
+design — 55%, 40%, and 60% of the population respectively — which is
+what makes identity resolution necessary rather than trivial). Medium
+(50,000-person) and large (500,000-person) profiles were <strong>not
+generated or evaluated</strong> in this work; see Section XIII.</p>
+<h2 id="xi.-results-and-evaluation">XI. Results and Evaluation</h2>
+<h3 id="a.-identity-resolution-measured-precision-and-recall">A.
+Identity resolution: measured precision and recall</h3>
+<p><strong>Table III. Pairwise identity-resolution evaluation,
+<code>small</code> profile, 1,000 persons, seed 20260922</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th style="text-align: right;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>True pairs (ground truth)</td>
+<td style="text-align: right;">769</td>
+</tr>
+<tr class="even">
+<td>Resolved pairs (system output)</td>
+<td style="text-align: right;">663</td>
+</tr>
+<tr class="odd">
+<td>True positive pairs</td>
+<td style="text-align: right;">659</td>
+</tr>
+<tr class="even">
+<td>False positive pairs</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td>False negative pairs</td>
+<td style="text-align: right;">110</td>
+</tr>
+<tr class="even">
+<td><strong>Pairwise precision</strong></td>
+<td style="text-align: right;"><strong>0.994</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Pairwise recall</strong></td>
+<td style="text-align: right;"><strong>0.857</strong></td>
+</tr>
+<tr class="even">
+<td><strong>F1</strong></td>
+<td style="text-align: right;"><strong>0.920</strong></td>
+</tr>
+<tr class="odd">
+<td>Over-merge incidents (clusters)</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Under-merge incidents (true persons split across clusters)</td>
+<td style="text-align: right;">96</td>
+</tr>
+<tr class="odd">
+<td>Evaluated source records</td>
+<td style="text-align: right;">1,545</td>
+</tr>
+</tbody>
+</table>
+<p>The measured precision is consistent with the system’s explicit
+design bias toward precision (Section III, VI-B–D): of 663 pairs the
+resolver merged, 659 were genuinely the same person. Manual inspection
+of the two remaining over-merge incidents found both to be three-member
+clusters in which two different true persons share a seeded household
+phone number and a third member is genuinely, correctly linked to one of
+them by email — the attribute-conflict guard (Section VI-D) as
+implemented arbitrates only the exact
+two-member/single-unreinforced-edge case described in its worked
+example, and does not yet generalise to a three-member cluster held
+together by a mix of a disputed edge and a separately-legitimate one.
+This is reported as a known limitation (Section XIII), not elided.</p>
+<p>The 110 missed pairs (recall gap) are concentrated in records whose
+only shared identifier is a <code>device_cookie</code> — deliberately
+excluded from matching by design (Section VI-A) — or which the current
+pipeline’s identifier construction step does not extract from every
+available source. This is the expected shape of the precision/recall
+trade-off this system was built to make deliberately, not an unexamined
+weakness.</p>
+<h3 id="b.-qualitative-correctness-worked-example-fixtures">B.
+Qualitative correctness: worked-example fixtures</h3>
+<p>Independent of the quantitative evaluation, six hand-built fixtures
+encode the canonical cases a deterministic identity resolver must get
+right: a three-hop transitive chain with no identifier shared end-to-end
+(A↔︎B by email, B↔︎C by phone ⇒ A, B, C cluster together); a shared
+household phone number between two people with different names, which
+must <strong>not</strong> merge; a generic role-account email
+(<code>info@…</code>), which must not link two otherwise-unrelated
+records; a switchboard number shared by many records across sources,
+which the frequency screen must neutralise entirely; a record with no
+usable identifier at all, which must survive as its own singleton
+cluster rather than being dropped; and canonical-ID stability, asserting
+that two consecutive runs on unchanged input produce identical
+identifiers for every cluster. All six pass as automated tests.</p>
+<h3 id="c.-data-quality-engine">C. Data quality engine</h3>
+<p>Across the seven tabular/JSON source datasets in the
+<code>small</code>-profile run used for the results above, the
+platform-wide quality score (record-count weighted across dataset
+scores) was 98.8; individual dataset scores ranged from 95.1
+(<code>products</code>, affected by a deliberately seeded category-name
+inconsistency defect) to 100.0 (<code>app_users</code>). Eighty-eight
+records across all datasets were quarantined, none silently dropped —
+every quarantined record remains queryable with its dataset, its
+specific failed rule ID, and its offending value.</p>
+<h3 id="d.-test-suite">D. Test suite</h3>
+<p>Twenty-five automated tests pass: five covering generator
+reproducibility and distributional properties, four covering the
+data-quality engine’s classification invariant and rule coverage, seven
+covering the identity-resolution worked examples described in Section
+XI-B, and nine covering live HTTP behaviour of the FastAPI backend
+(authentication, role-based 401/404 responses, and full
+profile/segment/analytics response shapes) against a running PostgreSQL
+instance.</p>
+<h2 id="xii.-discussion">XII. Discussion</h2>
+<p>The central engineering argument of this work is that identity
+resolution and data quality are not services that a single
+<code>JOIN</code> or a <code>dropna()</code> can approximate away — they
+require, respectively, a graph algorithm with explicit precision/recall
+trade-offs stated as design decisions, and a classification engine whose
+false positives and false negatives are both individually inspectable.
+The measured results (0.994 precision, 0.857 recall) are consistent with
+that design intent, and — as important as the numbers themselves — the
+process of producing them surfaced a real defect in the evaluation
+harness (Section X-B), which is exactly the kind of “trust but verify
+your own measurement” discipline an engineering narrative should be able
+to show, not merely claim.</p>
+<h2 id="xiii.-limitations">XIII. Limitations</h2>
+<p>This work is explicit about what it has not done, rather than
+implying a broader scope than what was executed:</p>
+<ul>
+<li><strong>Scale.</strong> All measured results are from the
+<code>small</code> (1,000-person) profile. The <code>medium</code>
+(50,000-person, ~5M-event) and <code>large</code> (500,000-person,
+~50M-event) profiles the platform is designed to support were not
+generated or benchmarked in this work; no throughput, latency, or
+scalability claim is made beyond the architectural argument in Section
+VI-C that blocking makes the matching step sub-quadratic.</li>
+<li><strong>Attribute-conflict guard generality.</strong> As shown in
+Section XI-A, the guard correctly arbitrates the two-member pairwise
+case its worked example specifies but does not yet generalise to larger
+clusters with mixed legitimate and disputed edges.</li>
+<li><strong>Persistence coverage.</strong> The Spark pipeline computes
+correct results for web events, sessions, support tickets, marketing
+events, quarantined record payloads, and the full identity merge/split
+audit trail; the PostgreSQL loader in this build persists a working
+subset — customers, resolved identities, orders, and customer metrics —
+rather than every computed table. Extending loader coverage to the
+remaining tables is mechanical, not a design change.</li>
+<li><strong>Segmentation backend.</strong> A single SQL-compiled backend
+serves both interactive preview and full recompute; a second,
+Spark-compiled backend for batch recompute at customer counts too large
+for interactive SQL (as originally scoped) was not built.</li>
+<li><strong>No probabilistic or fuzzy matching.</strong> All matching is
+exact within a namespace after normalisation; name similarity, address
+similarity, and probabilistic scoring — standard extensions in the
+entity-resolution literature [1], [2] — are out of scope for this
+deterministic-core design and would be a natural additive layer, not a
+replacement.</li>
+<li><strong>Deployment scope.</strong> The system was run and tested
+against a local PostgreSQL instance and local-mode Spark; a full
+containerised multi-service deployment was validated for configuration
+correctness (<code>docker compose config</code>) but not executed
+end-to-end in the environment this work was produced in.</li>
+</ul>
+<h2 id="xiv.-reproducibility">XIV. Reproducibility</h2>
+<p>Every result in this paper is reproducible from the public repository
+with the following sequence (abbreviated; full detail in the
+repository’s <code>docs/SETUP.md</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># environment</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> backend <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> <span class="at">-m</span> venv .venv <span class="kw">&amp;&amp;</span> <span class="ex">.venv/bin/pip</span> install <span class="at">-r</span> requirements-dev.txt</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># database</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">createdb</span> c360</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">MIGRATIONS_DATABASE_URL</span><span class="op">=</span>postgresql+psycopg://postgres:postgres@localhost:5432/c360 <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">.venv/bin/alembic</span> upgrade head</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># generate the evaluated dataset (seed 20260922, small profile)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> c360.generator.main <span class="at">--seed</span> 20260922 <span class="at">--size</span> small <span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out-dir</span> ../data <span class="at">--defect-profile</span> default</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># run the 13-stage pipeline</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">DATABASE_URL</span><span class="op">=</span>postgresql://postgres:postgres@localhost:5432/c360 <span class="dt">\</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="ex">.venv/bin/python</span> <span class="at">-m</span> c360.pipeline.run_pipeline <span class="dt">\</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">--input-dir</span> ../data/input <span class="at">--dataset-size</span> small <span class="dt">\</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">--database-url</span> <span class="st">&quot;</span><span class="va">$DATABASE_URL</span><span class="st">&quot;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># measure identity resolution against ground truth</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> c360.eval.identity_eval <span class="dt">\</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">--generated-dir</span> ../data/generated <span class="at">--database-url</span> <span class="st">&quot;</span><span class="va">$DATABASE_URL</span><span class="st">&quot;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co"># run the full automated test suite</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="va">DATABASE_URL</span><span class="op">=</span>postgresql+psycopg://postgres:postgres@localhost:5432/c360 <span class="dt">\</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="va">JWT_SECRET_KEY</span><span class="op">=</span>test-secret <span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest tests/ <span class="at">-q</span></span></code></pre></div>
+<h2 id="xv.-conclusion">XV. Conclusion</h2>
+<p>Customer360 demonstrates that the core engineering problems of a
+customer data platform — reproducible synthetic evaluation data,
+non-destructive data quality classification, deterministic and auditable
+identity resolution, distributed customer analytics, and a secured
+serving layer — can be integrated into one working, tested system
+without reducing any of them to a shortcut. Its identity-resolution
+component, evaluated honestly against retained ground truth rather than
+asserted, measures a pairwise precision of 0.994 and recall of 0.857 on
+synthetic data at a 1,000-person scale, with every remaining error case
+inspected and explained rather than hidden. The system’s limitations —
+untested scale beyond 1,000 persons, a guard that does not yet
+generalise past its specified worked example, and partial loader
+coverage of computed data — are stated plainly, because an engineering
+artefact’s credibility rests on what it admits it has not yet done as
+much as on what it demonstrably has.</p>
+<h2 id="references">References</h2>
+<p>[1] I. P. Fellegi and A. B. Sunter, “A Theory for Record Linkage,”
+<em>Journal of the American Statistical Association</em>, vol. 64, no.
+328, pp. 1183–1210, 1969.</p>
+<p>[2] P. Christen, <em>Data Matching: Concepts and Techniques for
+Record Linkage, Entity Resolution, and Duplicate Detection</em>.
+Springer, 2012.</p>
+<p>[3] A. K. Elmagarmid, P. G. Ipeirotis, and V. S. Verykios, “Duplicate
+Record Detection: A Survey,” <em>IEEE Transactions on Knowledge and Data
+Engineering</em>, vol. 19, no. 1, pp. 1–16, 2007.</p>
+<p>[4] L. Getoor and A. Machanavajjhala, “Entity Resolution: Theory,
+Practice &amp; Open Challenges,” <em>Proceedings of the VLDB
+Endowment</em>, vol. 5, no. 12, pp. 2018–2019, 2012.</p>
+<p>[5] T. C. Redman, “The Impact of Poor Data Quality on the Typical
+Enterprise,” <em>Communications of the ACM</em>, vol. 41, no. 2,
+pp. 79–82, 1998.</p>
+<p>[6] A. Halevy, A. Rajaraman, and J. Ordille, “Data Integration: The
+Teenage Years,” in <em>Proc. 32nd Int. Conf. Very Large Data Bases (VLDB
+’06)</em>, 2006, pp. 9–16.</p>
+<p>[7] A. Doan, A. Halevy, and Z. Ives, <em>Principles of Data
+Integration</em>. Morgan Kaufmann, 2012.</p>
+<p>[8] M. Stonebraker <em>et al.</em>, “Data Curation at Scale: The Data
+Tamer System,” in <em>Proc. 6th Biennial Conf. Innovative Data Systems
+Research (CIDR ’13)</em>, 2013.</p>
+<p>[9] R. Y. Wang and D. M. Strong, “Beyond Accuracy: What Data Quality
+Means to Data Consumers,” <em>Journal of Management Information
+Systems</em>, vol. 12, no. 4, pp. 5–33, 1996.</p>
+<p>[10] M. Zaharia <em>et al.</em>, “Apache Spark: A Unified Engine for
+Big Data Processing,” <em>Communications of the ACM</em>, vol. 59, no.
+11, pp. 56–65, 2016.</p>
+<p>[11] A. Biryukov, D. Dinu, and D. Khovratovich, “Argon2: New
+Generation of Memory-Hard Functions for Password Hashing and Other
+Applications,” in <em>2016 IEEE European Symposium on Security and
+Privacy (EuroS&amp;P)</em>, 2016, pp. 292–302.</p>
+<p>[12] M. Jones, J. Bradley, and N. Sakimura, “JSON Web Token (JWT),”
+IETF RFC 7519, 2015. [Online]. Available:
+https://www.rfc-editor.org/rfc/rfc7519</p>
+<p>[13] PostgreSQL Global Development Group, “PostgreSQL 16
+Documentation,” 2023. [Online]. Available:
+https://www.postgresql.org/docs/16/</p>
+<p>[14] Apache Software Foundation, “Spark SQL, DataFrames and Datasets
+Guide,” 2024. [Online]. Available:
+https://spark.apache.org/docs/latest/sql-programming-guide.html</p>
+<p>[15] S. Ramírez, “FastAPI Documentation,” 2024. [Online]. Available:
+https://fastapi.tiangolo.com/</p>
+<p>[16] OWASP Foundation, “OWASP Top 10:2021,” 2021. [Online].
+Available: https://owasp.org/Top10/</p>
+<hr />
+<p><em>This paper reports only results produced by code in the
+accompanying repository. Every reported metric was reproduced live in
+the same working session in which this paper was written; see the
+repository’s <code>benchmarks/IDENTITY_EVAL.md</code> and
+<code>docs/PROJECT_DECISIONS.md</code> for the underlying evidence and a
+fuller account of the system’s scope and limitations.</em></p>
+</body>
+</html>
