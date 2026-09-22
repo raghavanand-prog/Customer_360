@@ -38,8 +38,19 @@ def _maybe_invalid_email(rng: np.random.Generator, email: str, tracker: DefectTr
     return email
 
 
-def write_customers_crm(path: Path, people: list[Person], rng: np.random.Generator, tracker: DefectTracker) -> int:
+def write_customers_crm(path: Path, people: list[Person], rng: np.random.Generator,
+                         tracker: DefectTracker) -> tuple[int, list[tuple[str, str]]]:
+    """Returns (rows_written, [(crm_customer_id, true_person_id), ...]).
+
+    The id map is returned explicitly -- rather than reconstructed by the
+    caller from a separately-counted sequence -- because a within-source
+    duplicate (X-07) writes more than one CRM row per person, which would
+    silently desynchronise any externally-recomputed row count from the
+    IDs actually written. That desync previously corrupted the identity
+    ground truth for every person generated after the first X-07 duplicate.
+    """
     rows_written = 0
+    id_map: list[tuple[str, str]] = []
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["crm_customer_id", "first_name", "last_name", "email", "phone",
@@ -57,6 +68,7 @@ def write_customers_crm(path: Path, people: list[Person], rng: np.random.Generat
             for copy_idx in range(n_copies):
                 crm_id = f"C{seq:06d}"
                 seq += 1
+                id_map.append((crm_id, person.true_person_id))
                 email = person.email_primary if copy_idx == 0 else (person.email_secondary or person.email_primary)
                 tracker.note_applicable("X-01")
                 if rng.random() < tracker.rate("X-01"):
@@ -94,11 +106,13 @@ def write_customers_crm(path: Path, people: list[Person], rng: np.random.Generat
                             ts_iso(datetime.combine(person.tenure_start, datetime.min.time())),
                             ts_iso(datetime.combine(person.tenure_start, datetime.min.time()))])
                 rows_written += 1
-    return rows_written
+    return rows_written, id_map
 
 
-def write_loyalty(path: Path, people: list[Person], rng: np.random.Generator, tracker: DefectTracker) -> int:
+def write_loyalty(path: Path, people: list[Person], rng: np.random.Generator,
+                   tracker: DefectTracker) -> tuple[int, list[tuple[str, str]]]:
     rows_written = 0
+    id_map: list[tuple[str, str]] = []
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh, delimiter=";")
         w.writerow(["loyalty_id", "member_name", "mobile", "email_address", "tier",
@@ -110,6 +124,7 @@ def write_loyalty(path: Path, people: list[Person], rng: np.random.Generator, tr
                 continue
             loyalty_id = f"L{seq:08d}"
             seq += 1
+            id_map.append((loyalty_id, person.true_person_id))
             email = "" if rng.random() < 0.45 else person.email_primary
             tracker.note_applicable("X-03")
             mobile = format_phone(rng, person.phone, tracker.rate("X-03")).lstrip("+")
@@ -135,11 +150,13 @@ def write_loyalty(path: Path, people: list[Person], rng: np.random.Generator, tr
                         person.city, country,
                         datetime.combine(person.tenure_start, datetime.min.time()).strftime("%d/%m/%Y %H:%M")])
             rows_written += 1
-    return rows_written
+    return rows_written, id_map
 
 
-def write_app_users(path: Path, people: list[Person], rng: np.random.Generator, tracker: DefectTracker) -> int:
+def write_app_users(path: Path, people: list[Person], rng: np.random.Generator,
+                     tracker: DefectTracker) -> tuple[int, list[tuple[str, str]]]:
     rows_written = 0
+    id_map: list[tuple[str, str]] = []
     with open(path, "w", encoding="utf-8") as fh:
         for person in people:
             if not person.in_app:
@@ -186,7 +203,8 @@ def write_app_users(path: Path, people: list[Person], rng: np.random.Generator, 
                 continue
             fh.write(json.dumps(record) + "\n")
             rows_written += 1
-    return rows_written
+            id_map.append((app_user_id, person.true_person_id))
+    return rows_written, id_map
 
 
 def write_products(path: Path, products: list[Product], rng: np.random.Generator, tracker: DefectTracker) -> int:

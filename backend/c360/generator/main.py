@@ -133,9 +133,9 @@ def generate(
 
     tracker = DefectTracker(defect_profile)
 
-    n_crm = writers.write_customers_crm(input_dir / "customers_crm.csv", people, rng_fmt, tracker)
-    n_loy = writers.write_loyalty(input_dir / "loyalty_members.csv", people, rng_fmt, tracker)
-    n_app = writers.write_app_users(input_dir / "app_users.jsonl", people, rng_fmt, tracker)
+    n_crm, crm_id_map = writers.write_customers_crm(input_dir / "customers_crm.csv", people, rng_fmt, tracker)
+    n_loy, loyalty_id_map = writers.write_loyalty(input_dir / "loyalty_members.csv", people, rng_fmt, tracker)
+    n_app, app_id_map = writers.write_app_users(input_dir / "app_users.jsonl", people, rng_fmt, tracker)
     n_prod = writers.write_products(input_dir / "products.csv", products, rng_fmt, tracker)
     n_ord, n_items = writers.write_orders_and_items(
         input_dir / "orders.jsonl", input_dir / "order_items.csv", orders, people_by_id, products, rng_fmt, tracker)
@@ -146,17 +146,11 @@ def generate(
     # ground truth: only crm/loyalty/app source records carry a person identity;
     # orders/events/tickets/marketing are attributed via the person's identifiers
     # and are not independent identity-bearing source records.
-    ground_truth: list[tuple[str, str, str]] = []
-    crm_seq = loy_seq = 1
-    for p in people:
-        if p.in_crm:
-            ground_truth.append(("crm", f"C{crm_seq:06d}", p.true_person_id))
-            crm_seq += 1
-        if p.in_loyalty:
-            ground_truth.append(("loyalty", f"L{loy_seq:08d}", p.true_person_id))
-            loy_seq += 1
-        if p.in_app:
-            ground_truth.append(("app", f"U{p.true_person_id[3:]}", p.true_person_id))
+    ground_truth: list[tuple[str, str, str]] = (
+        [("crm", crm_id, true_id) for crm_id, true_id in crm_id_map]
+        + [("loyalty", loy_id, true_id) for loy_id, true_id in loyalty_id_map]
+        + [("app", app_id, true_id) for app_id, true_id in app_id_map]
+    )
     _write_ground_truth(generated_dir / "ground_truth_identity", ground_truth)
 
     dataset_files = [
