@@ -1,0 +1,232 @@
+{
+  "summary": {
+    "total_cases": 12,
+    "tool_call_correctness": 1.0,
+    "retrieval_relevance": 0.75,
+    "retrieval_applicable_cases": 4,
+    "latency_ms_mean": 2.11,
+    "latency_ms_median": 2.51,
+    "latency_ms_max": 3.76,
+    "answer_correctness": "NOT EVALUATED -- no LLM provider configured in this environment",
+    "groundedness": "NOT EVALUATED -- no LLM provider configured in this environment",
+    "citation_narrative_correctness": "NOT EVALUATED -- no LLM provider configured in this environment"
+  },
+  "cases": [
+    {
+      "id": "profile-1",
+      "category": "customer_profile",
+      "question": "Tell me about this customer's profile.",
+      "expected_tools": [
+        "get_customer_profile"
+      ],
+      "actual_tools": [
+        "get_customer_profile"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": null,
+      "top_retrieved_score": null,
+      "retrieval_correct": null,
+      "latency_ms": 3.39,
+      "provider_configured": false
+    },
+    {
+      "id": "metric-1",
+      "category": "metric_explanation",
+      "question": "Explain this customer's RFM profile.",
+      "expected_tools": [
+        "get_customer_metrics",
+        "get_customer_profile"
+      ],
+      "actual_tools": [
+        "get_customer_metrics",
+        "get_customer_profile"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": null,
+      "top_retrieved_score": null,
+      "retrieval_correct": null,
+      "latency_ms": 3.0,
+      "provider_configured": false
+    },
+    {
+      "id": "metric-2",
+      "category": "metric_explanation",
+      "question": "What is the customer's total spend and CLV?",
+      "expected_tools": [
+        "get_customer_metrics",
+        "get_customer_profile"
+      ],
+      "actual_tools": [
+        "get_customer_metrics",
+        "get_customer_profile"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "docs/DATA_DICTIONARY.md",
+      "top_retrieved_score": 0.3474,
+      "retrieval_correct": null,
+      "latency_ms": 2.47,
+      "provider_configured": false
+    },
+    {
+      "id": "segment-1",
+      "category": "segment_explanation",
+      "question": "Why is this customer considered high value?",
+      "expected_tools": [
+        "get_customer_metrics",
+        "get_customer_profile",
+        "get_customer_segments"
+      ],
+      "actual_tools": [
+        "get_customer_metrics",
+        "get_customer_profile",
+        "get_customer_segments"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "config/segments.yaml",
+      "top_retrieved_score": 0.3878,
+      "retrieval_correct": null,
+      "latency_ms": 3.76,
+      "provider_configured": false
+    },
+    {
+      "id": "segment-2",
+      "category": "segment_explanation",
+      "question": "What segments does this customer belong to?",
+      "expected_tools": [
+        "get_customer_profile",
+        "get_customer_segments"
+      ],
+      "actual_tools": [
+        "get_customer_profile",
+        "get_customer_segments"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": null,
+      "top_retrieved_score": null,
+      "retrieval_correct": null,
+      "latency_ms": 2.02,
+      "provider_configured": false
+    },
+    {
+      "id": "identity-1",
+      "category": "identity_explanation",
+      "question": "Why does the system consider these identities the same customer?",
+      "expected_tools": [
+        "get_customer_identities",
+        "get_customer_profile"
+      ],
+      "actual_tools": [
+        "get_customer_identities",
+        "get_customer_profile"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "docs/DATA_DICTIONARY.md",
+      "top_retrieved_score": 0.4248,
+      "retrieval_correct": null,
+      "latency_ms": 2.92,
+      "provider_configured": false
+    },
+    {
+      "id": "dq-1",
+      "category": "dq_explanation",
+      "question": "What data quality issues affect this customer?",
+      "expected_tools": [
+        "get_customer_profile",
+        "get_customer_quality"
+      ],
+      "actual_tools": [
+        "get_customer_profile",
+        "get_customer_quality"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "docs/ARCHITECTURE.md",
+      "top_retrieved_score": 0.2558,
+      "retrieval_correct": null,
+      "latency_ms": 2.56,
+      "provider_configured": false
+    },
+    {
+      "id": "timeline-1",
+      "category": "timeline_summary",
+      "question": "Summarise this customer's recent activity and timeline.",
+      "expected_tools": [
+        "get_customer_profile",
+        "get_customer_timeline"
+      ],
+      "actual_tools": [
+        "get_customer_profile",
+        "get_customer_timeline"
+      ],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "docs/ARCHITECTURE.md",
+      "top_retrieved_score": 0.3076,
+      "retrieval_correct": null,
+      "latency_ms": 3.11,
+      "provider_configured": false
+    },
+    {
+      "id": "doc-segment",
+      "category": "platform_doc",
+      "question": "What is the threshold for the high value segment?",
+      "expected_tools": [],
+      "actual_tools": [],
+      "tool_call_correct": true,
+      "expected_source_substring": "config/segments.yaml",
+      "top_retrieved_source": "config/segments.yaml",
+      "top_retrieved_score": 0.495,
+      "retrieval_correct": true,
+      "latency_ms": 0.61,
+      "provider_configured": false
+    },
+    {
+      "id": "doc-dq-email",
+      "category": "platform_doc",
+      "question": "What rule validates email address syntax?",
+      "expected_tools": [],
+      "actual_tools": [],
+      "tool_call_correct": true,
+      "expected_source_substring": "config/dq_rules.yaml",
+      "top_retrieved_source": "config/dq_rules.yaml",
+      "top_retrieved_score": 0.4629,
+      "retrieval_correct": true,
+      "latency_ms": 0.55,
+      "provider_configured": false
+    },
+    {
+      "id": "doc-identity",
+      "category": "platform_doc",
+      "question": "How does identity resolution use connected components?",
+      "expected_tools": [],
+      "actual_tools": [],
+      "tool_call_correct": true,
+      "expected_source_substring": "docs/DATA_PIPELINE.md",
+      "top_retrieved_source": "docs/DATA_PIPELINE.md",
+      "top_retrieved_score": 0.2825,
+      "retrieval_correct": true,
+      "latency_ms": 0.48,
+      "provider_configured": false
+    },
+    {
+      "id": "doc-offtopic",
+      "category": "platform_doc",
+      "question": "What is the capital of France?",
+      "expected_tools": [],
+      "actual_tools": [],
+      "tool_call_correct": true,
+      "expected_source_substring": null,
+      "top_retrieved_source": "docs/DATA_DICTIONARY.md",
+      "top_retrieved_score": 0.3722,
+      "retrieval_correct": false,
+      "latency_ms": 0.41,
+      "provider_configured": false
+    }
+  ]
+}

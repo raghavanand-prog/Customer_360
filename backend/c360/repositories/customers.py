@@ -81,7 +81,7 @@ def get_customer_timeline(db: Session, canonical_id: str, limit: int) -> list[di
             UNION ALL
             SELECT event_ts, 'web_event', event_type FROM web_events WHERE canonical_customer_id = :id
             UNION ALL
-            SELECT created_at, 'support_ticket', subject FROM support_tickets WHERE canonical_customer_id = :id
+            SELECT created_at, 'support_ticket', category || ' (' || status || ')' FROM support_tickets WHERE canonical_customer_id = :id
             UNION ALL
             SELECT event_ts, 'marketing', campaign_name FROM marketing_events WHERE canonical_customer_id = :id
         ) unioned

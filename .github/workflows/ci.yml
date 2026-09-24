@@ -28,7 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # pgvector/pgvector:pg16 = official postgres:16 + the pgvector
+        # extension preinstalled -- needed for migration 0003_ai_knowledge
+        # (the Customer360 Intelligence Assistant's document_chunks table).
+        # Same env vars/ports as plain postgres:16; drop-in replacement.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: c360
           POSTGRES_USER: postgres
@@ -62,7 +66,26 @@ jobs:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/c360
           JWT_SECRET_KEY: ci-test-secret-key-not-for-production
         run: python -m c360.cli create-admin --email admin@c360.local --password Admin123!Pass
-      - name: Run pytest (generator, DQ engine, identity resolution -- Spark local mode)
+      - name: Generate + run pipeline (tiny profile, so API tests have real customer rows)
+        # Pre-existing gap this CI file had before this commit: test_api.py's
+        # customer/segment/analytics tests require at least one real
+        # customer in Postgres, but no step ever loaded one. Using the
+        # smallest generator profile ("tiny", 200 people) to keep this fast.
+        # Note: run_pipeline connects via raw psycopg (not SQLAlchemy), which
+        # does not understand the "+psycopg" dialect suffix used by the
+        # other steps here -- it needs a plain postgresql:// URL.
+        working-directory: backend
+        run: |
+          python -m c360.generator.main --seed 20260922 --size tiny --out-dir ../data --defect-profile default
+          python -m c360.pipeline.run_pipeline --input-dir ../data/input --dataset-size tiny --database-url "postgresql://postgres:postgres@localhost:5432/c360"
+          python -m c360.cli evaluate-segments --database-url "postgresql://postgres:postgres@localhost:5432/c360"
+      - name: Ingest AI knowledge base (no LLM credential required)
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/c360
+          JWT_SECRET_KEY: ci-test-secret-key-not-for-production
+        run: python -m c360.cli ingest-ai-docs
+      - name: Run pytest (generator, DQ engine, identity resolution, AI assistant -- Spark local mode)
         working-directory: backend
         env:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/c360
