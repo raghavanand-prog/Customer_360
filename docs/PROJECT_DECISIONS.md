@@ -86,6 +86,120 @@ n<20 was large enough to let some genuinely high-frequency identifiers
 through unscreened. Switched to `F.size(F.collect_set(...))` — exact, and
 cheap at this cardinality.
 
+### ADR-17: pgvector in the existing Postgres, not a separate vector database
+
+The Customer360 Intelligence Assistant (RAG) needs similarity search over a
+small (~70-150 chunk) documentation corpus. Adding a dedicated vector
+database (Pinecone, Weaviate, Qdrant, ...) would mean a second data store,
+a second connection string, a second set of credentials, and a second
+thing that can be down — for a corpus this size, none of that buys
+anything a `vector` column and the `<=>` cosine-distance operator in the
+Postgres instance this project already runs don't provide. Neon supports
+the `pgvector` extension directly. **Revisit when:** the corpus grows into
+the tens of thousands of chunks and query latency or index-build time on
+Postgres becomes a measured problem — not before, and not speculatively.
+
+### ADR-18: No approximate-nearest-neighbour index at this corpus size
+
+The first version of migration `0003_ai_knowledge` added an `ivfflat`
+index with `lists=100`. Verified during development: with only 69 rows,
+`ivfflat`'s default `probes=1` silently returned **zero** results for
+every query, because most of the 100 list partitions held 0-1 rows and the
+single probed list often wasn't one of them. Fixed by removing the
+approximate index entirely — a sequential scan over a few hundred rows is
+both exact and fast, and there is nothing to gain from an approximate
+index until the corpus is large enough (low thousands+) for the trade-off
+(index build cost, and precision loss from the number of lists probed) to
+actually pay for itself. Left as an explicit `-- Revisit` comment in the
+migration rather than a benchmarked constant, since it hasn't been
+benchmarked at that scale.
+
+### ADR-19: A fixed keyword router chooses tools, not an LLM-driven planning loop
+
+The assistant's tool selection (`c360/ai/agent.py::route_question`) is a
+plain keyword-to-tool lookup table, not a step where an LLM decides which
+function to call. Three reasons, in order of importance: (1) **security** —
+see `docs/AI_SECURITY.md`; there is no path from adversarial text in a
+prompt to an unintended tool call, because the LLM is never given the
+ability to choose one; (2) **it works without any LLM configured at all**,
+which this environment genuinely has none of, and the whole tool-calling
+and retrieval pipeline needed to be end-to-end testable regardless; (3) **it
+is 100% deterministic and unit-testable** — see the tool-call-correctness
+score in `docs/AI_EVALUATION.md` (12/12 on the eval set), which would not
+be a meaningful, reproducible number for an LLM-driven router without a
+configured model and a much larger eval set. **Trade-off accepted:** the
+router only recognises the keyword patterns it's given; a differently
+phrased question that doesn't match any pattern gets only the base
+`get_customer_profile` tool (if a customer is in context) rather than a
+model reasoning about intent. **Revisit when:** a real LLM is configured
+and the keyword router's miss rate on real usage is actually measured
+against an LLM-driven alternative — not before.
+
+### ADR-20: A single controlled agent, not an autonomous multi-agent system
+
+The assistant is one bounded call sequence (route → call allowlisted tools
+→ retrieve docs → generate) with a hard cap on tool calls
+(`MAX_TOOL_CALLS_HARD_CAP = 6`) and no loop where the model re-plans based
+on intermediate results. An autonomous or multi-agent design (planner
+agent + worker agents, iterative re-querying) would add failure modes
+(runaway loops, harder-to-audit tool-call chains, higher latency and cost
+once a real LLM is billed per call) with no corresponding capability this
+project's actual questions need. **Revisit when:** a real usage pattern
+emerges that a single bounded pass genuinely cannot answer (e.g.
+multi-step reasoning across several customers) — not speculatively.
+
+### ADR-21: Provider-agnostic LLM/embedding interfaces, with a deterministic local fallback
+
+`c360/ai/llm.py` and `c360/ai/embeddings.py` define small interfaces
+(`generate`/`stream`/`structured_generate`; `embed_documents`/
+`embed_query`) rather than calling a specific vendor's SDK throughout the
+codebase. The concrete reason this mattered in practice, not just in
+principle: **no LLM or embedding API key exists anywhere in this project**,
+and the feature still had to build, test, and run correctly end-to-end
+without one — via `NotConfiguredProvider` and
+`DeterministicLocalEmbedding` respectively. Both fallbacks are the *only*
+implementations actually exercised in this environment (see
+`docs/AI_EVALUATION.md` for exactly what that means for measured
+results). A real provider (`AnthropicProvider` exists, code-complete, HTTP
+calls only, no added SDK dependency) can be activated purely via an
+environment variable with no other code change.
+
+### ADR-22 (finding, not a design decision): segment evaluation was fully written but never wired to anything
+
+Found while making CI genuinely test the new AI feature against a clean
+database rather than a long-lived dev database with leftover state.
+`c360/segments/evaluator.py::evaluate_all` — the full SQL-backend segment
+recompute described in ADR-14 — was complete and correct, but was never
+called from `run_pipeline`, the CLI, or the `Makefile`. `segments` and
+`segment_members` only ever had rows in this project's dev/Neon databases
+because someone (an earlier session) invoked it manually at some point;
+`test_api.py::test_segments_list` was consequently passing in CI (and
+locally) for the wrong reason — pytest never re-created the data it was
+asserting against, it was relying on residual state from previous runs
+that happened to persist in whichever database was configured. **Fix:**
+added `python -m c360.cli evaluate-segments`, wired into CI right after
+the pipeline run. Verified on a genuinely fresh, migrated-but-empty
+database: pipeline run → `evaluate-segments` → all 46 tests (25 existing +
+21 new AI tests) pass, including `test_segments_list`'s assertion of 8
+segments. Recorded here rather than silently fixed, because "a test was
+passing for the wrong reason" is exactly the kind of gap this project's
+own ADR-15/16 already set the precedent of documenting honestly instead of
+hiding.
+
+### ADR-23: Java/Spring/Hibernate, XML integration, and a Node.js gateway are deliberately out of scope for this phase
+
+The Adobe Associate Technical Consultant JD asks for Java/Spring/Hibernate
+and XML/web-services experience, and mentions Node.js. None of the three
+are implemented in this repository as of this phase. This is a scope
+decision, not an oversight: adding a Spring Boot service, an XML export
+endpoint, or a Node.js streaming gateway with no real architectural need
+(FastAPI already serves the AI endpoint cleanly) would be exactly the
+"keyword-collection" outcome this phase's own instructions warned against.
+See `docs/ADOBE_JD_ALIGNMENT.md` for these marked honestly as 🔴 Not
+implemented, and `docs/ENTERPRISE_JAVA_NOTES.md` (if/when written) for
+concept-level interview preparation that doesn't require polluting the
+product with code that has no job to do.
+
 ## Scope reductions (what the plan asks for that is not fully built)
 
 This list is organised by cost to close, cheapest first, and is the
