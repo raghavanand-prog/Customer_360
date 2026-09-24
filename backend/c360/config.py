@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     feature_recommendations: bool = False
     feature_ml_churn: bool = False
 
+    # -- Customer360 Intelligence Assistant (RAG) ---------------------------
+    # `anthropic_api_key` is intentionally never required at startup: the
+    # assistant must run (and honestly report "AI provider not configured")
+    # with no key set at all. See c360/ai/llm.py.
+    anthropic_api_key: str = ""
+    ai_llm_model: str = "claude-3-5-haiku-20241022"
+    ai_embedding_dim: int = 256
+    ai_max_tool_calls: int = 4
+    ai_retrieval_top_k: int = 4
+
     @field_validator("database_url")
     @classmethod
     def _normalise_database_url(cls, v: str) -> str:

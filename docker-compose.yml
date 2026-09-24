@@ -1,6 +1,9 @@
 services:
   postgres:
-    image: postgres:16
+    # pgvector/pgvector:pg16 = postgres:16 + the pgvector extension
+    # preinstalled, needed by migration 0003_ai_knowledge (the Customer360
+    # Intelligence Assistant's document_chunks table). Same env vars/ports.
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: c360
       POSTGRES_USER: postgres

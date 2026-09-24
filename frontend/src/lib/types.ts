@@ -113,3 +113,25 @@ export interface DatasetQualityScore {
   score_integrity: number | null;
   score_timeliness: number | null;
 }
+
+export interface AiSourceRef {
+  source: string;
+  section: string;
+  score: number;
+}
+
+export interface AiAskResponse {
+  answer: string;
+  tools_called: string[];
+  tool_denied: string[];
+  sources: AiSourceRef[];
+  provider: string;
+  model: string | null;
+  configured: boolean;
+}
+
+export interface AiStatus {
+  configured: boolean;
+  provider: string;
+  knowledge_chunks: number;
+}
