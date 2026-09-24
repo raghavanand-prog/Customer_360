@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import type { CustomerProfile } from "../lib/types";
 import { ChurnBadge, ErrorState, LoadingState, StatTile, formatCurrency, formatDate, formatDateTime } from "../components/Common";
+import { AiAssistantPanel } from "../components/AiAssistant";
 
 export default function CustomerProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +32,8 @@ export default function CustomerProfilePage() {
         </div>
         <ChurnBadge band={metrics?.churn_risk_band ?? null} />
       </div>
+
+      <AiAssistantPanel customerId={data.identity.canonical_customer_id} />
 
       {/* IDENTITY */}
       <section className="card p-4">
