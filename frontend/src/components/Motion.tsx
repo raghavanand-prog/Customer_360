@@ -3,7 +3,7 @@ import type { ElementType } from "react";
 import { animate } from "animejs/animation";
 import { createTimeline } from "animejs/timeline";
 import { stagger } from "animejs/utils";
-import { EASE_OUT, hasFinePointer, lockScroll, prefersReducedMotion, useSplitReveal } from "../lib/motion";
+import { EASE_SLOW, hasFinePointer, lockScroll, prefersReducedMotion, useSplitReveal } from "../lib/motion";
 
 /** A heading whose words slide up from behind a mask on mount. */
 export function SplitHeading({
@@ -66,13 +66,13 @@ export function IntroSequence() {
       lockScroll(false);
       setShow(false);
     };
-    const tl = createTimeline({ defaults: { ease: EASE_OUT }, onComplete: done });
-    tl.add(mark, { scale: [0.4, 1], opacity: [0, 1], rotate: [-90, 0], duration: 900 }, 0)
-      .add(chars, { translateY: ["110%", "0%"], duration: 900, delay: stagger(35) }, 250)
-      .add(tagline, { opacity: [0, 1], translateY: [8, 0], duration: 700 }, 650)
-      .add(line, { scaleX: [0, 1], duration: 900, ease: "inOutQuart" }, 700)
-      .add(content, { opacity: [1, 0], translateY: [0, -24], duration: 500, ease: "inQuart" }, 1650)
-      .add(root, { translateY: ["0%", "-100%"], duration: 900, ease: "inOutExpo" }, 1850);
+    const tl = createTimeline({ defaults: { ease: EASE_SLOW }, onComplete: done });
+    tl.add(mark, { opacity: [0, 1], filter: ["blur(20px)", "blur(0px)"], scale: [1.04, 1], duration: 1600 }, 0)
+      .add(chars, { opacity: [0, 1], filter: ["blur(16px)", "blur(0px)"], duration: 1400, delay: stagger(40) }, 200)
+      .add(line, { scaleX: [0, 1], duration: 1600 }, 700)
+      .add(tagline, { opacity: [0, 1], filter: ["blur(10px)", "blur(0px)"], duration: 1400 }, 900)
+      .add(content, { opacity: [1, 0], filter: ["blur(0px)", "blur(12px)"], duration: 900, ease: "inQuad" }, 2600)
+      .add(root, { opacity: [1, 0], duration: 900, ease: "inOutQuad" }, 3000);
 
     skipRef.current = () => {
       tl.cancel();
@@ -96,27 +96,25 @@ export function IntroSequence() {
       className="fixed inset-0 z-[100] bg-surface flex items-center justify-center cursor-pointer"
       aria-hidden="true"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,rgba(45,212,167,0.10),transparent_60%)]" />
-      <div data-intro-content className="relative flex flex-col items-center">
-        <div data-intro-mark className="h-14 w-14 rounded-xl bg-accent/15 border border-accent/40 flex items-center justify-center shadow-[0_0_60px_-10px_rgba(45,212,167,0.5)]" style={{ opacity: 0 }}>
-          <div className="h-3.5 w-3.5 rounded-full bg-accent" />
+      <div className="light-leak -top-[200px] -left-[300px]" />
+      <div data-intro-content className="relative flex flex-col items-center px-6 text-center">
+        <div data-intro-mark className="h-12 w-12 rounded-full border border-accent/50 flex items-center justify-center" style={{ opacity: 0 }}>
+          <div className="h-2.5 w-2.5 rounded-full bg-accent" />
         </div>
-        <div className="mt-7 flex text-4xl sm:text-5xl font-semibold tracking-tight text-ink">
+        <div className="mt-10 flex font-display uppercase text-ink text-[clamp(44px,9vw,120px)] leading-[0.9] tracking-[0.04em]" aria-hidden="true">
           {word.split("").map((c, i) => (
-            <span key={i} className="inline-block overflow-hidden pb-1">
-              <span data-intro-char className="inline-block" style={{ transform: "translateY(110%)" }}>
-                {c}
-              </span>
+            <span key={i} data-intro-char className="inline-block" style={{ opacity: 0 }}>
+              {c}
             </span>
           ))}
         </div>
-        <div data-intro-tagline className="mt-3 text-sm text-ink-muted tracking-wide" style={{ opacity: 0 }}>
-          Unified customer data platform
+        <div className="mt-8 h-px w-56">
+          <div data-intro-line className="hairline" style={{ transform: "scaleX(0)" }} />
         </div>
-        <div className="mt-8 h-px w-48 bg-white/10 overflow-hidden">
-          <div data-intro-line className="h-full w-full bg-accent origin-left" style={{ transform: "scaleX(0)" }} />
+        <div data-intro-tagline className="mt-6 font-serif italic font-light text-xl sm:text-2xl text-accent" style={{ opacity: 0 }}>
+          One customer, assembled from many sources.
         </div>
-        <div className="mt-6 text-2xs uppercase tracking-[0.2em] text-ink-faint">Click to skip</div>
+        <div className="mt-10 text-[10.5px] uppercase tracking-[0.3em] text-ink-faint">Click to skip</div>
       </div>
     </div>
   );
@@ -233,12 +231,12 @@ export function RouteProgress({ routeKey }: { routeKey: string }) {
       return;
     }
     if (prefersReducedMotion()) return;
-    const tl = createTimeline({ defaults: { ease: EASE_OUT } });
-    tl.add(el, { opacity: [1, 1], scaleX: [0, 1], duration: 700 }, 0).add(el, { opacity: [1, 0], duration: 400, ease: "outQuad" }, 650);
+    const tl = createTimeline({ defaults: { ease: EASE_SLOW } });
+    tl.add(el, { opacity: [1, 1], scaleX: [0, 1], duration: 900 }, 0).add(el, { opacity: [1, 0], duration: 400, ease: "outQuad" }, 650);
     return () => {
       tl.cancel();
       el.style.opacity = "0";
     };
   }, [routeKey]);
-  return <div ref={ref} className="fixed top-0 left-0 right-0 h-0.5 z-50 bg-accent origin-left pointer-events-none shadow-[0_0_12px_rgba(45,212,167,0.7)]" style={{ opacity: 0 }} aria-hidden="true" />;
+  return <div ref={ref} className="fixed top-0 left-0 right-0 h-0.5 z-50 bg-accent/80 origin-left pointer-events-none" style={{ opacity: 0 }} aria-hidden="true" />;
 }

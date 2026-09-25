@@ -129,9 +129,9 @@ export function RevenueTrendPanel() {
           <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
             <div>
               <div className="text-xs text-ink-faint">{active.period}</div>
-              <div className="text-2xl font-semibold tracking-tight text-ink tabular-nums">{formatCurrency(active.revenue)}</div>
+              <div className="serif-num font-light text-4xl text-ink">{formatCurrency(active.revenue)}</div>
             </div>
-            <div className={`text-xs tabular-nums ${change >= 0 ? "text-accent" : "text-warn"}`}>
+            <div className={`text-xs tabular-nums ${change >= 0 ? "text-positive" : "text-warn"}`}>
               {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}% since {rows[0].period}
             </div>
           </div>
@@ -150,15 +150,15 @@ export function RevenueTrendPanel() {
           >
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2dd4a7" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#2dd4a7" stopOpacity="0" />
+                <stop offset="0%" stopColor="#cdb284" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#cdb284" stopOpacity="0" />
               </linearGradient>
             </defs>
             {[0.25, 0.5, 0.75].map((f) => (
-              <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="#20252b" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="#2a2724" strokeWidth="1" vectorEffect="non-scaling-stroke" />
             ))}
             <path ref={areaRef} d={geo.area} fill={`url(#${gradId})`} />
-            <path ref={lineRef} d={geo.d} fill="none" stroke="#2dd4a7" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+            <path ref={lineRef} d={geo.d} fill="none" stroke="#cdb284" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
             {hover !== null && (
               <line x1={geo.pts[hover][0]} x2={geo.pts[hover][0]} y1="0" y2={H} stroke="rgba(255,255,255,0.12)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
             )}
@@ -169,8 +169,8 @@ export function RevenueTrendPanel() {
                   cx={x}
                   cy={y}
                   r={hover === i ? 5 : 3}
-                  fill={hover === i ? "#2dd4a7" : "#15181c"}
-                  stroke="#2dd4a7"
+                  fill={hover === i ? "#cdb284" : "#1e1c1a"}
+                  stroke="#cdb284"
                   strokeWidth="1.5"
                   vectorEffect="non-scaling-stroke"
                   style={{ transformOrigin: `${x}px ${y}px`, transformBox: "view-box" }}
@@ -213,7 +213,7 @@ export function SegmentsPanel() {
                 </span>
               </div>
               <div className="mt-1.5">
-                <Meter value={s.member_count} max={max} tone="good" label={`${s.name} members`} />
+                <Meter value={s.member_count} max={max} tone="brand" label={`${s.name} members`} />
               </div>
             </Link>
           </li>
@@ -249,7 +249,7 @@ export function TopCustomersPanel() {
                 </span>
               </div>
               <div className="mt-1.5">
-                <Meter value={r.total_spend} max={max} tone="info" label="Share of top spend" />
+                <Meter value={r.total_spend} max={max} tone="brand" label="Share of top spend" />
               </div>
             </div>
           </li>
@@ -277,7 +277,7 @@ export function RecentRunsPanel() {
             {i < runs.length - 1 && <span className="absolute left-[5px] top-7 -bottom-2.5 w-px bg-surface-border" aria-hidden="true" />}
             <span
               className={`relative h-[11px] w-[11px] rounded-full border-2 shrink-0 ${
-                r.status === "succeeded" ? "border-accent bg-accent/30" : r.status === "failed" ? "border-danger bg-danger/30" : "border-info bg-info/30"
+                r.status === "succeeded" ? "border-positive bg-positive/30" : r.status === "failed" ? "border-danger bg-danger/30" : "border-info bg-info/30"
               }`}
               aria-hidden="true"
             />
@@ -309,7 +309,7 @@ export function SidebarStatus() {
     refetchInterval: 60_000,
   });
   const ok = q.data?.status === "ok" && q.data?.database === "up";
-  const tone = q.isError ? "bg-danger" : !q.data ? "bg-ink-faint" : ok ? "bg-accent" : "bg-warn";
+  const tone = q.isError ? "bg-danger" : !q.data ? "bg-ink-faint" : ok ? "bg-positive" : "bg-warn";
   return (
     <Link to="/system" className="mx-3 mb-3 block rounded-lg border border-surface-border bg-surface/60 p-3 hover:border-surface-strong transition-colors">
       <div className="flex items-center gap-2">

@@ -6,18 +6,18 @@ import { useReducedMotion, useReveal } from "../lib/motion";
 import { EmptyState, ErrorState, Loading, PageBody, PageHeader, SectionHeader, formatCompactCurrency, formatCurrency, formatInt } from "../components/Common";
 
 const C = {
-  accent: "#2dd4a7",
-  warn: "#e5a33d",
-  danger: "#e5484d",
-  neutral: "#6b747c",
-  grid: "#20252b",
-  axis: "#6b747c",
-  surface: "#15181c",
-  border: "#262b31",
+  accent: "#cdb284",
+  warn: "#d48354",
+  danger: "#cf5959",
+  neutral: "#797167",
+  grid: "#2a2724",
+  axis: "#797167",
+  surface: "#1e1c1a",
+  border: "#39342d",
 };
 
 const BAND_FILL: Record<string, string> = {
-  active: C.accent,
+  active: "#89b39b",
   at_risk: C.warn,
   churned: C.danger,
   no_purchase_history: C.neutral,
@@ -31,8 +31,8 @@ const tooltipProps = {
     fontSize: 12,
     boxShadow: "0 8px 24px -12px rgba(0,0,0,0.6)",
   },
-  labelStyle: { color: "#9aa4ad", marginBottom: 4 },
-  itemStyle: { color: "#e6e9ec" },
+  labelStyle: { color: "#9f958a", marginBottom: 4 },
+  itemStyle: { color: "#ede8de" },
   cursor: { fill: "rgba(255,255,255,0.03)", stroke: "rgba(255,255,255,0.08)" },
 };
 

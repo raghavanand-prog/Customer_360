@@ -3,44 +3,61 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      // Warm charcoal + champagne (adapted from the Maison Solenne direction).
+      // Status colours are deliberately NOT the brand gold: sage = good,
+      // ochre = warning, rose = failing, so health never reads as branding.
       colors: {
         surface: {
-          DEFAULT: "#0d0f12",
-          sunken: "#0a0c0e",
-          raised: "#15181c",
-          hover: "#1a1e23",
-          border: "#262b31",
-          strong: "#343a42",
+          DEFAULT: "#161413",
+          sunken: "#100f0e",
+          raised: "#1e1c1a",
+          hover: "#23211f",
+          border: "#39342d",
+          strong: "#4d463d",
         },
         accent: {
-          DEFAULT: "#2dd4a7",
-          dim: "#1f9e7d",
-          muted: "#16362e",
+          DEFAULT: "#cdb284",
+          dim: "#a88f63",
+          muted: "#3a3226",
         },
         ink: {
-          DEFAULT: "#e6e9ec",
-          muted: "#9aa4ad",
-          faint: "#6b747c",
+          DEFAULT: "#ede8de",
+          muted: "#9f958a",
+          faint: "#797167",
         },
-        danger: "#e5484d",
-        warn: "#e5a33d",
-        info: "#6ea8d8",
+        ivory: "#f5f0e7",
+        positive: "#89b39b",
+        danger: "#cf5959",
+        warn: "#d48354",
+        info: "#879eb5",
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Jost", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Italiana", "ui-serif", "Georgia", "serif"],
+        serif: ["Cormorant", "ui-serif", "Georgia", "serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+      },
+      borderRadius: {
+        DEFAULT: "2px",
+        md: "3px",
+        lg: "4px",
+        xl: "6px",
       },
       fontSize: {
         "2xs": ["10.5px", { lineHeight: "14px" }],
       },
       boxShadow: {
-        card: "inset 0 1px 0 0 rgba(255,255,255,0.03), 0 1px 2px 0 rgba(0,0,0,0.35)",
+        card: "inset 0 1px 0 0 rgba(237,232,222,0.025), 0 1px 2px 0 rgba(0,0,0,0.35)",
         raised: "inset 0 1px 0 0 rgba(255,255,255,0.04), 0 8px 24px -12px rgba(0,0,0,0.6)",
       },
       transitionTimingFunction: {
         "out-quart": "cubic-bezier(0.25, 1, 0.5, 1)",
       },
       keyframes: {
+        "light-leak": {
+          "0%": { transform: "translate(-15%, -10%)" },
+          "100%": { transform: "translate(55%, 25%)" },
+        },
         "fade-in-up": {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
@@ -63,6 +80,7 @@ export default {
         },
       },
       animation: {
+        "light-leak": "light-leak 20s ease-in-out infinite alternate",
         "fade-in-up": "fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both",
         "fade-in": "fade-in 0.8s ease-out both",
         shimmer: "shimmer 1.6s ease-in-out infinite",
