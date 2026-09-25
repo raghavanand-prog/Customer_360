@@ -21,6 +21,7 @@ import {
   scoreTone,
 } from "../components/Common";
 import { Icon } from "../components/Icons";
+import { RecentRunsPanel, RevenueTrendPanel, SegmentsPanel, TopCustomersPanel } from "../components/OverviewPanels";
 
 function pct(part: number, total: number): string {
   if (!total) return "0%";
@@ -143,6 +144,14 @@ export default function Overview() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <CustomerBaseCard data={data} />
               <DataHealthCard data={data} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <RevenueTrendPanel />
+              <SegmentsPanel />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <RecentRunsPanel />
+              <TopCustomersPanel />
             </div>
           </div>
         )}

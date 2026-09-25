@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { lockScroll, reveal, scrollToTop, slideTo } from "../lib/motion";
 import { RouteProgress } from "./Motion";
+import { SidebarStatus } from "./OverviewPanels";
 import { Icon } from "./Icons";
 import { SkeletonTiles, SkeletonTable, Skeleton } from "./Common";
 
@@ -126,6 +127,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="px-4 pb-2 stat-label">Workspace</div>
         <NavList onNavigate={onNavigate} />
       </nav>
+      <SidebarStatus />
       <UserFooter />
     </>
   );
