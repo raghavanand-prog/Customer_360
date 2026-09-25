@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import type { CustomerProfile } from "../lib/types";
-import { useStagedReveal } from "../lib/motion";
+import { useHairline, useReveal, useStagedReveal } from "../lib/motion";
 import {
   ChurnBadge,
   ErrorState,
@@ -45,6 +45,43 @@ function Stage({
         </div>
       </div>
       <div className="sm:pl-8">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * The customer's "composition", set as a centred typographic pyramid (after
+ * a perfume's notes pyramid): where the record comes from on top, how the
+ * customer behaves in the middle, and which audiences they belong to at the
+ * base. Every word is real profile data. Tiers arrive one by one and the
+ * hairlines between them draw outward from the centre.
+ */
+function CompositionPyramid({ data }: { data: CustomerProfile }) {
+  const m = data.metrics;
+  const sources = Array.from(new Set(data.identity.identities.map((i) => i.source_system.toUpperCase())));
+  const heart = [
+    m?.rfm_segment,
+    m?.engagement_score !== null && m?.engagement_score !== undefined ? `engagement ${m.engagement_score}` : null,
+    m?.churn_risk_band ? m.churn_risk_band.replace(/_/g, " ") : null,
+  ].filter(Boolean) as string[];
+  const base = data.segments.map((s) => s.name);
+  const key = data.identity.canonical_customer_id;
+  const revealRef = useReveal<HTMLDivElement>(key, { step: 300, distance: 16 });
+  const line1 = useHairline<HTMLSpanElement>(key, 450);
+  const line2 = useHairline<HTMLSpanElement>(key, 750);
+
+  return (
+    <section aria-label="Customer composition" className="px-4 sm:px-6 lg:px-10 pt-12 pb-4">
+      <div ref={revealRef} className="mx-auto max-w-3xl text-center">
+        <div data-reveal className="stat-label mb-6">Composition</div>
+        <p data-reveal className="text-[11px] uppercase tracking-[0.3em] text-ink-muted">{sources.join(" · ") || "No sources"}</p>
+        <span ref={line1} className="hairline my-5 mx-auto max-w-[220px]" aria-hidden="true" />
+        <p data-reveal className="font-serif text-2xl sm:text-[28px] font-light text-ink lowercase">{heart.join(" · ") || "no behaviour signals yet"}</p>
+        <span ref={line2} className="hairline my-5 mx-auto max-w-[420px]" aria-hidden="true" />
+        <p data-reveal className="font-serif italic font-light text-3xl sm:text-[40px] leading-tight text-accent">
+          {base.length ? base.join(" · ") : "not yet in any segment"}
+        </p>
+      </div>
     </section>
   );
 }
@@ -124,7 +161,9 @@ export default function CustomerProfilePage() {
         }
       />
 
-      <div ref={stagesRef} className="px-4 sm:px-6 lg:px-8 py-6 space-y-10 max-w-6xl">
+      <CompositionPyramid data={data} />
+
+      <div ref={stagesRef} className="px-4 sm:px-6 lg:px-10 py-10 space-y-16 max-w-6xl">
         <Stage index="01" title="Identity & provenance" description="Every source record resolved into this canonical customer.">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <StatTile label="Source records" count={data.identity.identities.length} />

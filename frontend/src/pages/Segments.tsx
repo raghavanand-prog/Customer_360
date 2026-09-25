@@ -13,7 +13,10 @@ function SegmentCard({ s, maxMembers }: { s: SegmentSummary; maxMembers: number 
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <Icon.Segments size={14} className="text-accent/80 shrink-0" />
-          <h2 className="text-sm font-semibold text-ink truncate group-hover:text-accent transition-colors">{s.name}</h2>
+          <h2 className="relative font-serif text-xl font-normal text-ink truncate group-hover:text-accent transition-colors duration-500">
+            {s.name}
+            <span className="absolute left-0 -bottom-0.5 h-px w-full bg-accent/70 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out-quart" aria-hidden="true" />
+          </h2>
         </div>
         <span className="badge bg-white/[0.05] text-ink-faint font-mono shrink-0">v{s.current_version}</span>
       </div>
@@ -21,7 +24,7 @@ function SegmentCard({ s, maxMembers }: { s: SegmentSummary; maxMembers: number 
       <div className="mt-4 flex items-end justify-between gap-3">
         <div>
           <div className="stat-label">Members</div>
-          <div className="text-xl font-semibold text-ink mt-0.5">
+          <div className="serif-num font-light text-3xl text-ink mt-1">
             <AnimatedNumber value={s.member_count} />
           </div>
         </div>

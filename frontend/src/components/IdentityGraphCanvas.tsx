@@ -65,7 +65,7 @@ export default function IdentityGraphCanvas({ className }: { className?: string 
     seed();
     window.addEventListener("resize", resize);
 
-    const accent = "45, 212, 167"; // matches --accent
+    const accent = "205, 178, 132"; // matches --accent
     let raf = 0;
     let frame = 0;
 

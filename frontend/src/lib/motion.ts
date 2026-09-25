@@ -5,6 +5,7 @@ import { createTimeline } from "animejs/timeline";
 import { onScroll } from "animejs/events";
 import { splitText } from "animejs/text";
 import { stagger } from "animejs/utils";
+import { cubicBezier } from "animejs/easings";
 
 // Motion system for the console. Every animation goes through this module,
 // so reduced-motion and viewport-size handling live in one place.
@@ -21,6 +22,8 @@ const COMPACT_QUERY = "(max-width: 640px)";
 const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
 
 export const EASE_OUT = "outExpo";
+/** Slow, silky arrival curve: cubic-bezier(0.16, 1, 0.3, 1). */
+export const EASE_SLOW = cubicBezier(0.16, 1, 0.3, 1);
 
 function matches(query: string): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
@@ -114,6 +117,7 @@ function clearInline(targets: Targets) {
   for (const el of targets) {
     el.style.opacity = "";
     el.style.transform = "";
+    el.style.filter = "";
   }
 }
 
@@ -145,17 +149,24 @@ function whenScrolledIntoView(target: HTMLElement, play: () => () => void): () =
   };
 }
 
-function hide(targets: Targets, distance: number) {
+// "distance" is the starting blur radius in px: content arrives out of
+// focus, very slightly enlarged, and settles sharp — like scent arriving.
+function hide(targets: Targets, blur: number) {
   for (const el of targets) {
     el.style.opacity = "0";
-    el.style.transform = `translateY(${distance}px)`;
+    el.style.transform = "scale(1.04)";
+    el.style.filter = `blur(${blur}px)`;
   }
+}
+
+function blurIn(blur: number) {
+  return { opacity: [0, 1], scale: [1.04, 1], filter: [`blur(${blur}px)`, "blur(0px)"] };
 }
 
 export interface RevealOptions {
   /** ms between consecutive elements */
   step?: number;
-  /** px travelled upward */
+  /** starting blur radius in px */
   distance?: number;
   delay?: number;
   duration?: number;
@@ -170,9 +181,9 @@ export interface RevealOptions {
 export function reveal(targets: Targets, opts: RevealOptions = {}): () => void {
   if (targets.length === 0 || prefersReducedMotion()) return () => {};
   const compact = matches(COMPACT_QUERY);
-  const distance = opts.distance ?? (compact ? 14 : 26);
-  const step = opts.step ?? (compact ? 40 : 60);
-  const duration = opts.duration ?? 850;
+  const distance = opts.distance ?? (compact ? 10 : 16);
+  const step = opts.step ?? (compact ? 80 : 120);
+  const duration = opts.duration ?? 1600;
 
   const now = targets.filter(inView);
   const later = targets.filter((t) => !now.includes(t));
@@ -183,11 +194,10 @@ export function reveal(targets: Targets, opts: RevealOptions = {}): () => void {
   const cleanups: (() => void)[] = [];
   if (now.length) {
     const a = animate(now, {
-      opacity: [0, 1],
-      translateY: [distance, 0],
+      ...blurIn(distance),
       duration,
       delay: stagger(step, { start: opts.delay ?? 0 }),
-      ease: EASE_OUT,
+      ease: EASE_SLOW,
       onComplete: () => clearInline(now),
     });
     cleanups.push(() => a.cancel());
@@ -196,10 +206,9 @@ export function reveal(targets: Targets, opts: RevealOptions = {}): () => void {
     cleanups.push(
       whenScrolledIntoView(el, () => {
         const a = animate(el, {
-          opacity: [0, 1],
-          translateY: [distance, 0],
+          ...blurIn(distance),
           duration,
-          ease: EASE_OUT,
+          ease: EASE_SLOW,
           onComplete: () => clearInline([el]),
         });
         return () => a.cancel();
@@ -247,8 +256,8 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
     const sections = collect(root, "[data-stage]");
     if (sections.length === 0) return;
     const compact = matches(COMPACT_QUERY);
-    const distance = compact ? 16 : 32;
-    const sectionGap = compact ? 90 : 140;
+    const distance = compact ? 12 : 20;
+    const sectionGap = compact ? 160 : 260;
     const items = sections.map((s) => collect(s, "[data-reveal-item]"));
     const visible = sections.map(inView);
     const all = [...sections, ...items.flat()];
@@ -256,34 +265,32 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
     hide(items.flat(), distance / 2);
 
     const cleanups: (() => void)[] = [];
-    const tl = createTimeline({ defaults: { duration: 900, ease: EASE_OUT } });
+    const tl = createTimeline({ defaults: { duration: 1600, ease: EASE_SLOW } });
     let slot = 0;
     sections.forEach((section, i) => {
       const sectionItems = items[i];
       if (visible[i]) {
         const at = slot++ * sectionGap;
-        tl.add(section, { opacity: [0, 1], translateY: [distance, 0] }, at);
+        tl.add(section, blurIn(distance), at);
         if (sectionItems.length) {
-          tl.add(sectionItems, { opacity: [0, 1], translateY: [distance / 2, 0], duration: 750, delay: stagger(compact ? 35 : 55) }, at + 120);
+          tl.add(sectionItems, { ...blurIn(distance / 2), duration: 1400, delay: stagger(compact ? 70 : 110) }, at + 200);
         }
         return;
       }
       cleanups.push(
         whenScrolledIntoView(section, () => {
           const a = animate(section, {
-            opacity: [0, 1],
-            translateY: [distance, 0],
-            duration: 900,
-            ease: EASE_OUT,
+            ...blurIn(distance),
+            duration: 1600,
+            ease: EASE_SLOW,
             onComplete: () => clearInline([section]),
           });
           const b = sectionItems.length
             ? animate(sectionItems, {
-                opacity: [0, 1],
-                translateY: [distance / 2, 0],
-                duration: 750,
-                ease: EASE_OUT,
-                delay: stagger(compact ? 35 : 55, { start: 120 }),
+                ...blurIn(distance / 2),
+                duration: 1400,
+                ease: EASE_SLOW,
+                delay: stagger(compact ? 70 : 110, { start: 200 }),
                 onComplete: () => clearInline(sectionItems),
               })
             : null;
@@ -294,7 +301,7 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
         }),
       );
     });
-    tl.call(() => clearInline(all.filter((el) => el.style.opacity === "1")), slot * sectionGap + 1400);
+    tl.call(() => clearInline(all.filter((el) => el.style.opacity === "1")), slot * sectionGap + 2200);
     return () => {
       tl.cancel();
       cleanups.forEach((c) => c());
@@ -305,34 +312,38 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
 }
 
 /**
- * Masked headline reveal: splits the element's text into words (Anime.js
- * splitText, each word in a clipping wrapper) and slides every word up from
- * behind its mask. The split is reverted when the animation finishes, so
- * the DOM React owns is restored exactly.
+ * Headline reveal: splits the element's text into letters (Anime.js
+ * splitText) and brings each one in from a soft blur, 40ms apart. The split
+ * is reverted when the animation finishes, so the DOM React owns is
+ * restored exactly.
  */
 export function useSplitReveal<T extends HTMLElement = HTMLElement>(delay = 0) {
   const ref = useRef<T>(null);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || prefersReducedMotion()) return;
-    const split = splitText(el, { words: { wrap: "clip" } });
-    const words = split.words as HTMLElement[];
-    if (words.length === 0) {
+    const split = splitText(el, { chars: true });
+    const chars = split.chars as HTMLElement[];
+    if (chars.length === 0) {
       split.revert();
       return;
     }
-    for (const w of words) w.style.transform = "translateY(110%)";
+    for (const c of chars) {
+      c.style.opacity = "0";
+      c.style.filter = "blur(12px)";
+    }
     let reverted = false;
     const finish = () => {
       if (reverted) return;
       reverted = true;
       split.revert();
     };
-    const anim = animate(words, {
-      translateY: ["110%", "0%"],
-      duration: 1000,
-      delay: stagger(55, { start: delay }),
-      ease: EASE_OUT,
+    const anim = animate(chars, {
+      opacity: [0, 1],
+      filter: ["blur(12px)", "blur(0px)"],
+      duration: 1400,
+      delay: stagger(40, { start: delay }),
+      ease: EASE_SLOW,
       onComplete: finish,
     });
     return () => {
@@ -340,6 +351,34 @@ export function useSplitReveal<T extends HTMLElement = HTMLElement>(delay = 0) {
       finish();
     };
   }, [delay]);
+  return ref;
+}
+
+/** A hairline divider that draws outward from its centre (scaleX 0 -> 1). */
+export function useHairline<T extends HTMLElement = HTMLElement>(key: unknown, delay = 0) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !key || prefersReducedMotion()) return;
+    el.style.transform = "scaleX(0)";
+    const run = () => {
+      const a = animate(el, {
+        scaleX: [0, 1],
+        duration: 1600,
+        delay,
+        ease: EASE_SLOW,
+        onComplete: () => {
+          el.style.transform = "";
+        },
+      });
+      return () => a.cancel();
+    };
+    const stop = inView(el) ? run() : whenScrolledIntoView(el, run);
+    return () => {
+      stop();
+      el.style.transform = "";
+    };
+  }, [key, delay]);
   return ref;
 }
 
@@ -402,9 +441,9 @@ export function useMeter(key: unknown) {
     el.style.transform = "scaleX(0)";
     const anim = animate(el, {
       scaleX: [0, 1],
-      duration: 1300,
-      delay: 250,
-      ease: "outExpo",
+      duration: 1800,
+      delay: 300,
+      ease: EASE_SLOW,
       onComplete: () => {
         el.style.transform = "";
       },
