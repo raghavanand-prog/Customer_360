@@ -76,3 +76,15 @@ export function errorMessage(err: unknown): string {
   const axiosErr = err as AxiosError<ApiErrorBody>;
   return axiosErr?.response?.data?.error?.message ?? "Something went wrong. Please try again.";
 }
+
+/** What an error state can truthfully say about a failed request. */
+export function describeError(err: unknown): { detail: string; requestId?: string } {
+  if (!axios.isAxiosError(err)) return { detail: "The request failed." };
+  const resp = (err as AxiosError<ApiErrorBody>).response;
+  if (!resp) return { detail: "The API could not be reached." };
+  const body = resp.data?.error;
+  return {
+    detail: body?.message ? `HTTP ${resp.status} · ${body.message}` : `HTTP ${resp.status}`,
+    requestId: body?.request_id,
+  };
+}

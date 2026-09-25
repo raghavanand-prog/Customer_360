@@ -61,6 +61,11 @@ export default {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.45", transform: "scale(0.85)" },
         },
+        // Time until the next scheduled refresh (duration set inline).
+        countdown: {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
       },
       animation: {
         "fade-in-up": "fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both",
@@ -68,6 +73,7 @@ export default {
         shimmer: "shimmer 1.6s ease-in-out infinite",
         indeterminate: "indeterminate 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite",
         "soft-pulse": "soft-pulse 1.6s ease-in-out infinite",
+        countdown: "countdown linear both",
       },
     },
   },

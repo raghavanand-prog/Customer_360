@@ -24,8 +24,12 @@ export default function CustomerSearch() {
   const [q, setQ] = useState("");
   const [submitted, setSubmitted] = useState("");
   const navigate = useNavigate();
+  const clearSearch = () => {
+    setQ("");
+    setSubmitted("");
+  };
 
-  const { data, isLoading, isFetching, isError, isPlaceholderData, dataUpdatedAt, refetch } = useQuery({
+  const { data, error, isLoading, isFetching, isError, isPlaceholderData, dataUpdatedAt, refetch } = useQuery({
     queryKey: ["customers", submitted],
     queryFn: async () =>
       (await api.get<{ items: CustomerListItem[] }>("/customers", { params: { q: submitted || undefined, limit: 50 } })).data
@@ -63,14 +67,7 @@ export default function CustomerSearch() {
               Search
             </button>
             {submitted && (
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  setQ("");
-                  setSubmitted("");
-                }}
-              >
+              <button type="button" className="btn-secondary" onClick={clearSearch}>
                 Clear
               </button>
             )}
@@ -102,17 +99,29 @@ export default function CustomerSearch() {
             <SkeletonTable rows={8} cols={6} />
           </Loading>
         )}
-        {isError && <ErrorState message="Could not load customers." onRetry={() => refetch()} />}
-        {data && data.length === 0 && <EmptyState message="No customers match this search." hint="Try a partial email, a phone number, or a canonical ID." />}
+        {isError && <ErrorState message="Could not load customers." error={error} onRetry={() => refetch()} retrying={isFetching} />}
+        {data && data.length === 0 && (
+          <EmptyState
+            message={submitted ? "No customers match this search." : "No customers loaded yet."}
+            hint={submitted ? "Try a partial email, a phone number, or a canonical ID." : "Run the pipeline to populate the serving layer."}
+            action={
+              submitted ? (
+                <button type="button" className="btn-secondary text-xs px-3 py-1.5" onClick={clearSearch}>
+                  Clear search
+                </button>
+              ) : undefined
+            }
+          />
+        )}
         {data && data.length > 0 && (
-          <div className={`card overflow-x-auto transition-opacity duration-200 ${isFetching ? "opacity-60" : ""}`}>
+          <div className={`card scroll-x transition-opacity duration-200 ${isFetching ? "opacity-60" : ""}`}>
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Customer</th>
-                  <th>Email</th>
-                  <th>Country</th>
-                  <th className="text-right">Orders</th>
+                  <th className="hidden md:table-cell">Email</th>
+                  <th className="hidden xl:table-cell">Country</th>
+                  <th className="hidden sm:table-cell text-right">Orders</th>
                   <th className="text-right">Total spend</th>
                   <th>Churn risk</th>
                 </tr>
@@ -137,9 +146,9 @@ export default function CustomerSearch() {
                         <div className="text-xs text-ink-faint font-mono">{c.canonical_customer_id}</div>
                       </Link>
                     </td>
-                    <td className="text-ink-muted">{c.primary_email ?? "—"}</td>
-                    <td className="text-ink-muted">{c.country_code ?? "—"}</td>
-                    <td className="text-ink-muted text-right">{c.order_count ?? 0}</td>
+                    <td className="hidden md:table-cell text-ink-muted">{c.primary_email ?? "—"}</td>
+                    <td className="hidden xl:table-cell text-ink-muted">{c.country_code ?? "—"}</td>
+                    <td className="hidden sm:table-cell text-ink-muted text-right">{c.order_count ?? 0}</td>
                     <td className="text-ink text-right">{formatCurrency(c.total_spend)}</td>
                     <td>
                       <ChurnBadge band={c.churn_risk_band} />

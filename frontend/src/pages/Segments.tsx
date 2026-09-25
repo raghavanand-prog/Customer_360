@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import type { SegmentSummary } from "../lib/types";
 import { useReveal } from "../lib/motion";
-import { AnimatedNumber, EmptyState, ErrorState, Loading, PageBody, PageHeader, Skeleton, formatDateTime } from "../components/Common";
+import { AnimatedNumber, EmptyState, ErrorState, Loading, PageBody, PageHeader, ShareBar, Skeleton, formatDateTime } from "../components/Common";
 import { Icon } from "../components/Icons";
 
-function SegmentCard({ s, maxMembers }: { s: SegmentSummary; maxMembers: number }) {
+function SegmentCard({ s, maxMembers, index }: { s: SegmentSummary; maxMembers: number; index: number }) {
   const share = maxMembers ? (s.member_count / maxMembers) * 100 : 0;
   return (
     <Link data-reveal to={`/segments/${s.segment_id}`} className="card-interactive group flex flex-col p-4 min-w-0">
@@ -27,9 +27,10 @@ function SegmentCard({ s, maxMembers }: { s: SegmentSummary; maxMembers: number 
         </div>
         <Icon.ChevronRight size={14} className="text-ink-faint group-hover:text-accent group-hover:translate-x-0.5 transition-[color,transform] duration-200" />
       </div>
-      {/* Relative size vs the largest segment, for quick comparison only. */}
-      <div className="meter mt-3" aria-hidden="true">
-        <span className="bg-accent/50" style={{ width: `${share}%` }} />
+      {/* Relative size vs the largest segment, for quick comparison only. Grows
+          just after its card lands (cards stagger 45ms apart). */}
+      <div className="mt-3">
+        <ShareBar pct={share} delay={220 + index * 45} />
       </div>
       <div className="text-2xs text-ink-faint mt-2.5">Computed {formatDateTime(s.last_computed_at)}</div>
     </Link>
@@ -37,7 +38,7 @@ function SegmentCard({ s, maxMembers }: { s: SegmentSummary; maxMembers: number 
 }
 
 export default function Segments() {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, error, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["segments"],
     queryFn: async () => (await api.get<{ items: SegmentSummary[] }>("/segments")).data.items,
   });
@@ -57,12 +58,12 @@ export default function Segments() {
             </div>
           </Loading>
         )}
-        {isError && <ErrorState message="Could not load segments." onRetry={() => refetch()} />}
-        {data && data.length === 0 && <EmptyState message="No segments defined yet." />}
+        {isError && <ErrorState message="Could not load segments." error={error} onRetry={() => refetch()} retrying={isFetching} />}
+        {data && data.length === 0 && <EmptyState message="No segments defined yet." hint="Segments are defined in config/segments.yaml and evaluated on every pipeline run." />}
         {data && data.length > 0 && (
           <div ref={revealRef} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {data.map((s) => (
-              <SegmentCard key={s.segment_id} s={s} maxMembers={maxMembers} />
+            {data.map((s, i) => (
+              <SegmentCard key={s.segment_id} s={s} maxMembers={maxMembers} index={i} />
             ))}
           </div>
         )}

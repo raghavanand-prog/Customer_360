@@ -5,14 +5,33 @@ import { reveal, slideTo } from "../lib/motion";
 import { Icon } from "./Icons";
 import { SkeletonTiles, SkeletonTable, Skeleton } from "./Common";
 
-const NAV = [
-  { to: "/", label: "Overview", end: true, icon: Icon.Overview },
-  { to: "/customers", label: "Customers", icon: Icon.Customers },
-  { to: "/segments", label: "Segments", icon: Icon.Segments },
-  { to: "/analytics", label: "Analytics", icon: Icon.Analytics },
-  { to: "/quality", label: "Data Quality", icon: Icon.Quality },
-  { to: "/pipeline", label: "Pipeline Runs", icon: Icon.Pipeline },
-  { to: "/system", label: "System Health", icon: Icon.Health },
+interface NavItem {
+  to: string;
+  label: string;
+  end?: boolean;
+  icon: (typeof Icon)[keyof typeof Icon];
+}
+
+// Grouped by what the operator is looking at: the customer data itself, or
+// the platform that produces it.
+const NAV_GROUPS: { label?: string; items: NavItem[] }[] = [
+  { items: [{ to: "/", label: "Overview", end: true, icon: Icon.Overview }] },
+  {
+    label: "Customer data",
+    items: [
+      { to: "/customers", label: "Customers", icon: Icon.Customers },
+      { to: "/segments", label: "Segments", icon: Icon.Segments },
+      { to: "/analytics", label: "Analytics", icon: Icon.Analytics },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { to: "/quality", label: "Data Quality", icon: Icon.Quality },
+      { to: "/pipeline", label: "Pipeline Runs", icon: Icon.Pipeline },
+      { to: "/system", label: "System Health", icon: Icon.Health },
+    ],
+  },
 ];
 
 function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
@@ -24,10 +43,39 @@ function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
   );
 }
 
-/** Nav list with a single accent marker that glides to the active item. */
+function NavEntry({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const ItemIcon = item.icon;
+  return (
+    <li>
+      <NavLink
+        to={item.to}
+        end={item.end}
+        onClick={onNavigate}
+        className={({ isActive }) =>
+          `group flex items-center gap-3 rounded-md pl-4 pr-3 py-2 text-sm transition-colors duration-150 ${
+            isActive ? "text-ink bg-white/[0.045]" : "text-ink-muted hover:text-ink hover:bg-white/[0.025]"
+          }`
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <ItemIcon
+              className={`shrink-0 transition-[color,transform] duration-200 ease-out-quart motion-safe:group-hover:translate-x-px ${
+                isActive ? "text-accent" : "text-ink-faint group-hover:text-ink-muted"
+              }`}
+            />
+            <span className="truncate">{item.label}</span>
+          </>
+        )}
+      </NavLink>
+    </li>
+  );
+}
+
+/** Grouped nav with a single accent marker that glides to the active item, across groups. */
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<HTMLSpanElement>(null);
   const placed = useRef(false);
 
@@ -40,43 +88,38 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
       marker.style.opacity = "0";
       return;
     }
-    slideTo(marker, active.offsetTop + 6, active.offsetHeight - 12, !placed.current);
+    // Rect delta rather than offsetTop: group labels put items on fractional
+    // positions, and offsetTop rounds to whole pixels.
+    const y = active.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    slideTo(marker, y + 6, active.offsetHeight - 12, !placed.current);
     placed.current = true;
   }, [location.pathname]);
 
+  // The marker is positioned relative to this wrapper (the nearest positioned
+  // ancestor of every link), so offsetTop stays correct across groups.
   return (
-    <ul ref={listRef} className="relative px-2 space-y-0.5">
+    <div ref={listRef} className="relative px-2">
       <span
         ref={markerRef}
+        data-nav-marker
         className="absolute left-2 top-0 w-[2px] rounded-full bg-accent opacity-0 pointer-events-none"
         aria-hidden="true"
       />
-      {NAV.map(({ to, label, end, icon: ItemIcon }) => (
-        <li key={to}>
-          <NavLink
-            to={to}
-            end={end}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-md pl-4 pr-3 py-2 text-sm transition-colors duration-150 ${
-                isActive ? "text-ink bg-white/[0.045]" : "text-ink-muted hover:text-ink hover:bg-white/[0.025]"
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <ItemIcon
-                  className={`shrink-0 transition-colors duration-150 ${
-                    isActive ? "text-accent" : "text-ink-faint group-hover:text-ink-muted"
-                  }`}
-                />
-                <span className="truncate">{label}</span>
-              </>
-            )}
-          </NavLink>
-        </li>
+      {NAV_GROUPS.map((group, gi) => (
+        <div key={group.label ?? gi} className={gi > 0 ? "mt-5" : ""}>
+          {group.label && (
+            <div className="px-2 pb-1.5 stat-label" id={`nav-group-${gi}`}>
+              {group.label}
+            </div>
+          )}
+          <ul className="space-y-0.5" aria-labelledby={group.label ? `nav-group-${gi}` : undefined}>
+            {group.items.map((item) => (
+              <NavEntry key={item.to} item={item} onNavigate={onNavigate} />
+            ))}
+          </ul>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -122,7 +165,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
       <nav aria-label="Primary" className="flex-1 py-3 overflow-y-auto">
-        <div className="px-4 pb-2 stat-label">Workspace</div>
         <NavList onNavigate={onNavigate} />
       </nav>
       <UserFooter />

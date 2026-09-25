@@ -53,6 +53,8 @@ export interface RevealOptions {
   distance?: number;
   delay?: number;
   duration?: number;
+  /** which descendants to reveal (default `[data-reveal]`) */
+  selector?: string;
 }
 
 /**
@@ -99,11 +101,11 @@ function collect(root: HTMLElement | null, selector: string): Targets {
  */
 export function useReveal<T extends HTMLElement = HTMLDivElement>(key: unknown, opts: RevealOptions = {}) {
   const ref = useRef<T>(null);
-  const { step, distance, delay, duration } = opts;
+  const { step, distance, delay, duration, selector = "[data-reveal]" } = opts;
   useLayoutEffect(() => {
     if (!key) return;
-    return reveal(collect(ref.current, "[data-reveal]"), { step, distance, delay, duration });
-  }, [key, step, distance, delay, duration]);
+    return reveal(collect(ref.current, selector), { step, distance, delay, duration });
+  }, [key, step, distance, delay, duration, selector]);
   return ref;
 }
 
@@ -201,9 +203,12 @@ export function useCountUp(value: number | null | undefined, format: (n: number)
   return ref;
 }
 
-/** Grow a meter bar (scaleX, transform-only) from 0 to its CSS width. */
-export function useMeter(key: unknown) {
-  const ref = useRef<HTMLSpanElement>(null);
+/**
+ * Grow a bar (scaleX, transform-only) from 0 to its CSS width. The element
+ * needs `origin-left`. `delay` lets a bar follow its container's entrance.
+ */
+export function useMeter<T extends HTMLElement = HTMLSpanElement>(key: unknown, delay = 120) {
+  const ref = useRef<T>(null);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || key === null || key === undefined || prefersReducedMotion()) return;
@@ -211,7 +216,7 @@ export function useMeter(key: unknown) {
     const anim = animate(el, {
       scaleX: [0, 1],
       duration: 900,
-      delay: 120,
+      delay,
       ease: "outExpo",
       onComplete: () => {
         el.style.transform = "";
@@ -221,7 +226,7 @@ export function useMeter(key: unknown) {
       anim.cancel();
       el.style.transform = "";
     };
-  }, [key]);
+  }, [key, delay]);
   return ref;
 }
 
@@ -234,4 +239,59 @@ export function slideTo(el: HTMLElement, y: number, height: number, instant: boo
     return;
   }
   animate(el, { translateY: y, opacity: 1, duration: 380, ease: "outExpo" });
+}
+
+/**
+ * Controlled timeline for an ordered process (pipeline stages). Stages play
+ * in run order: each node lands, its row slides in, its duration bar grows,
+ * then the connector draws down to the next stage -- so the animation
+ * restates the execution order instead of decorating it.
+ *
+ * Markup per stage (all optional): `[data-step]` wrapping `[data-step-node]`,
+ * `[data-step-body]`, `[data-step-bar]` (needs origin-left) and
+ * `[data-step-line]` (needs origin-top).
+ */
+export function useStepTimeline<T extends HTMLElement = HTMLOListElement>(key: unknown) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    if (!key || prefersReducedMotion()) return;
+    const steps = collect(ref.current, "[data-step]");
+    if (steps.length === 0) return;
+    const compact = matches(COMPACT_QUERY);
+    const gap = compact ? 55 : 75;
+    const pick = (step: HTMLElement, sel: string) => step.querySelector<HTMLElement>(sel);
+    const parts = steps.map((s) => ({
+      node: pick(s, "[data-step-node]"),
+      body: pick(s, "[data-step-body]"),
+      bar: pick(s, "[data-step-bar]"),
+      line: pick(s, "[data-step-line]"),
+    }));
+    const all = parts.flatMap((p) => [p.node, p.body, p.bar, p.line]).filter((el): el is HTMLElement => !!el);
+
+    for (const p of parts) {
+      if (p.node) {
+        p.node.style.opacity = "0";
+        p.node.style.transform = "scale(0.4)";
+      }
+      if (p.body) {
+        p.body.style.opacity = "0";
+        p.body.style.transform = "translateX(-6px)";
+      }
+      if (p.bar) p.bar.style.transform = "scaleX(0)";
+      if (p.line) p.line.style.transform = "scaleY(0)";
+    }
+    const tl = createTimeline({ defaults: { ease: EASE_OUT }, onComplete: () => clearInline(all) });
+    parts.forEach((p, i) => {
+      const at = i * gap;
+      if (p.node) tl.add(p.node, { opacity: [0, 1], scale: [0.4, 1], duration: 320, ease: "outBack(1.6)" }, at);
+      if (p.body) tl.add(p.body, { opacity: [0, 1], translateX: [-6, 0], duration: 360 }, at + 30);
+      if (p.bar) tl.add(p.bar, { scaleX: [0, 1], duration: 620, ease: "outExpo" }, at + 90);
+      if (p.line) tl.add(p.line, { scaleY: [0, 1], duration: gap + 60, ease: "linear" }, at + 120);
+    });
+    return () => {
+      tl.cancel();
+      clearInline(all);
+    };
+  }, [key]);
+  return ref;
 }
