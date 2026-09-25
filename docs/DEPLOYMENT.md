@@ -7,7 +7,9 @@
 | Frontend (React console) | **Live on Vercel** | https://customer360-console.vercel.app/ — rebuilt against the real API URL, verified reachable (HTTP 200) |
 | Database (Neon Postgres) | **Provisioned, connected to both projects** | `neon-charcoal-village`, free tier. Connection string exists only as a Vercel `sensitive`-type env var — never read by, or exposed to, this session |
 | Backend (FastAPI, Vercel Python runtime) | **Deployed and live** | https://customer360-api.vercel.app — `GET /api/v1/health` returns `200 {"status":"ok"}`, confirming the deployment itself and its env config are correct |
-| Database schema / data | **Not yet loaded** | No migrations have been run against Neon, so there are no tables yet — see "One step left" below |
+| Database schema / data | **Loaded** | All migrations (through `0003_ai_knowledge`) applied to Neon; pipeline data and the AI knowledge base are both present |
+| AI knowledge base (`document_chunks`) | **Ingested** | 69 chunks (markdown docs + DQ rules + segment definitions), verified via live `GET /api/v1/ai/status` |
+| LLM provider | **Not configured (honest, by design)** | No `ANTHROPIC_API_KEY` set on the Vercel project; `/api/v1/ai/ask` returns an explicit "AI provider not configured" answer, never a fabricated one — verified live |
 
 `GET /api/v1/health/detail` (which touches the database) currently returns
 `500`, and any endpoint requiring real data will too, until migrations run.
@@ -97,6 +99,56 @@ than as a live pass.
 This is the same sequence `docker-compose.yml` automates locally — Vercel's
 Python runtime is an alternative *target* for the same FastAPI app, not a
 different app.
+
+## AI/RAG deployment (Customer360 Intelligence Assistant)
+
+The AI feature's code (`backend/c360/ai/*`, the `/api/v1/ai/*` router,
+migration `0003_ai_knowledge`) was already on `main` and auto-deployed to
+the live Vercel backend as part of the ordinary git-push deploy — no
+separate deploy step exists for it. What this phase actually did, in
+order, against the real production Neon database:
+
+1. **Verified the existing deployment state** — `customer360-api` on
+   Vercel was `READY`, built from the exact commit containing the AI code;
+   Neon env vars (`DATABASE_URL`, etc.) were present as `sensitive`-type
+   (unreadable by this session, by design); no `ANTHROPIC_API_KEY` or other
+   LLM-provider credential existed on the project.
+2. **Applied `alembic upgrade head`** from the user's own machine against
+   their real Neon connection string (never typed into this session), which
+   created the `document_chunks` and `ai_query_audit` tables.
+3. **Ran `python -m c360.cli ingest-ai-docs`**, also from the user's
+   machine against the same Neon database. Output: `Ingested 69 document
+   chunks into the AI knowledge base.` — matching the corpus size verified
+   locally in the phase that built the feature.
+4. **Verified live, against the real public API** (`test-verify@example.com`,
+   a real `admin`-role account created via the existing `create-admin` CLI
+   command against Neon, used only for this verification):
+   - `GET /api/v1/ai/status` → `{"configured": false, "provider": "none",
+     "knowledge_chunks": 69}` — confirms ingestion landed and the LLM
+     provider is genuinely not configured.
+   - `POST /api/v1/ai/ask` with a real `customer_id` from `GET
+     /api/v1/customers` → correctly routed to `get_customer_profile` and
+     `get_customer_segments`, returned real pgvector-retrieved sources
+     (e.g. `config/segments.yaml` §"Segment S-06 (Cart Abandoner)",
+     score 0.31), and an honest `"AI provider not configured..."` answer
+     rather than a fabricated one.
+   - `POST /api/v1/ai/ask` with no `customer_id` (general knowledge
+     question) → no tools called (correct — nothing customer-scoped was
+     asked), real doc-chunk sources returned, same honest not-configured
+     answer.
+
+**Not yet done as part of this phase:** testing the "Ask about this
+customer" panel through the live frontend UI in a real browser (the
+sandbox this session runs in has no direct network route to
+`*.vercel.app`; only a GET-only fetch tool and the API calls above were
+reachable). The backend behavior behind that UI is verified live per the
+above; the UI's rendering of it should be spot-checked manually.
+
+**LLM provider status:** genuinely not configured on the public
+deployment. No API key was invented or added. If a real key is added later
+(e.g. `ANTHROPIC_API_KEY` as a Vercel env var), `/api/v1/ai/ask` will use
+it automatically — the provider abstraction is already wired — but that
+path remains unverified against a live account until it happens.
 
 ## Local (Docker Compose)
 
