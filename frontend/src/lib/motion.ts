@@ -1,21 +1,26 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import Lenis from "lenis";
 import { animate } from "animejs/animation";
 import { createTimeline } from "animejs/timeline";
+import { onScroll } from "animejs/events";
+import { splitText } from "animejs/text";
 import { stagger } from "animejs/utils";
 
-// Motion rules for the console. Every animation goes through this module,
+// Motion system for the console. Every animation goes through this module,
 // so reduced-motion and viewport-size handling live in one place.
 //   - Only transform + opacity are animated (compositor-friendly).
-//   - Motion explains hierarchy/state (entrances, selection, results arriving);
-//     nothing loops except explicit in-progress indicators (CSS).
-//   - prefers-reduced-motion: no JS motion at all; content renders in its
-//     final state immediately.
-//   - Narrow viewports get shorter distances and tighter staggers.
+//   - Content already on screen animates immediately; content below the
+//     fold animates as it scrolls into view (Anime.js onScroll).
+//   - Inline styles are removed when an animation finishes, so elements
+//     always end in their plain CSS state.
+//   - prefers-reduced-motion: no JS motion, no smooth scroll, no parallax;
+//     content renders in its final state immediately.
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 const COMPACT_QUERY = "(max-width: 640px)";
+const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
 
-export const EASE_OUT = "outQuart";
+export const EASE_OUT = "outExpo";
 
 function matches(query: string): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
@@ -23,6 +28,10 @@ function matches(query: string): boolean {
 
 export function prefersReducedMotion(): boolean {
   return matches(REDUCED_QUERY);
+}
+
+export function hasFinePointer(): boolean {
+  return matches(FINE_POINTER_QUERY);
 }
 
 export function useReducedMotion(): boolean {
@@ -37,12 +46,109 @@ export function useReducedMotion(): boolean {
   return reduced;
 }
 
+// ------------------------------------------------------------ smooth scroll
+
+let lenis: Lenis | null = null;
+
+/** Inertial smooth scrolling for the whole window (skipped for reduced motion). */
+export function initSmoothScroll(): () => void {
+  if (lenis || prefersReducedMotion()) return () => {};
+  lenis = new Lenis({ autoRaf: true, duration: 1.1, smoothWheel: true });
+  return () => {
+    lenis?.destroy();
+    lenis = null;
+  };
+}
+
+export function scrollToTop() {
+  if (lenis) lenis.scrollTo(0, { immediate: true });
+  else window.scrollTo(0, 0);
+}
+
+export function scrollToElement(el: HTMLElement, offset = -80) {
+  if (lenis) lenis.scrollTo(el, { offset, duration: 1.2 });
+  else el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+}
+
+export function lockScroll(locked: boolean) {
+  if (lenis) {
+    if (locked) lenis.stop();
+    else lenis.start();
+  }
+  document.body.style.overflow = locked ? "hidden" : "";
+}
+
+/**
+ * Scroll parallax: `[data-parallax="0.3"]` elements drift at 30% of scroll
+ * speed; `data-parallax-fade` also fades them out over the first 320px.
+ * Used on page headers so titles ease away as content scrolls over them.
+ */
+export function initParallax(): () => void {
+  if (prefersReducedMotion()) return () => {};
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const y = window.scrollY;
+    document.querySelectorAll<HTMLElement>("[data-parallax]").forEach((el) => {
+      if (y > 700) return;
+      const f = Number(el.dataset.parallax) || 0.3;
+      el.style.translate = y > 0 ? `0 ${(y * f).toFixed(1)}px` : "";
+      if (el.hasAttribute("data-parallax-fade")) el.style.opacity = y > 0 ? String(Math.max(0, 1 - y / 320)) : "";
+    });
+  };
+  const onScrollEvt = () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  };
+  window.addEventListener("scroll", onScrollEvt, { passive: true });
+  return () => {
+    window.removeEventListener("scroll", onScrollEvt);
+    cancelAnimationFrame(frame);
+  };
+}
+
+// ------------------------------------------------------------ reveals
+
 type Targets = HTMLElement[];
 
 function clearInline(targets: Targets) {
   for (const el of targets) {
     el.style.opacity = "";
     el.style.transform = "";
+  }
+}
+
+function inView(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect();
+  return r.top < window.innerHeight * 0.94 && r.bottom > 0;
+}
+
+/**
+ * One-shot scroll trigger: runs `play` the first time `target` scrolls into
+ * view, then detaches the Anime.js scroll observer. (Linking an animation
+ * directly as `autoplay: onScroll(...)` also reverses it when the element
+ * scrolls back out, which would hide content again.)
+ */
+function whenScrolledIntoView(target: HTMLElement, play: () => () => void): () => void {
+  let stop: (() => void) | null = null;
+  const observer = onScroll({
+    target,
+    repeat: false,
+    onEnter: () => {
+      if (stop) return;
+      stop = play();
+      queueMicrotask(() => observer.revert());
+    },
+  });
+  return () => {
+    observer.revert();
+    stop?.();
+  };
+}
+
+function hide(targets: Targets, distance: number) {
+  for (const el of targets) {
+    el.style.opacity = "0";
+    el.style.transform = `translateY(${distance}px)`;
   }
 }
 
@@ -56,33 +162,52 @@ export interface RevealOptions {
 }
 
 /**
- * Fade + rise a set of elements in sequence. Returns a cleanup that cancels
- * the animation and removes every inline style it wrote, so elements always
- * end in their plain CSS state (no lingering transforms that would affect
- * stacking or fixed-position descendants).
+ * Fade + rise a set of elements. Elements already on screen play in a
+ * staggered sequence now; elements below the fold each play when they
+ * scroll into view. Returns a cleanup that cancels everything and removes
+ * every inline style it wrote.
  */
 export function reveal(targets: Targets, opts: RevealOptions = {}): () => void {
   if (targets.length === 0 || prefersReducedMotion()) return () => {};
   const compact = matches(COMPACT_QUERY);
-  const distance = opts.distance ?? (compact ? 6 : 10);
-  const step = opts.step ?? (compact ? 30 : 45);
+  const distance = opts.distance ?? (compact ? 14 : 26);
+  const step = opts.step ?? (compact ? 40 : 60);
+  const duration = opts.duration ?? 850;
 
-  // Set the start state synchronously (we run in a layout effect, before
-  // paint) so there is never a frame of fully-visible content first.
-  for (const el of targets) {
-    el.style.opacity = "0";
-    el.style.transform = `translateY(${distance}px)`;
+  const now = targets.filter(inView);
+  const later = targets.filter((t) => !now.includes(t));
+  // Set start state synchronously (we run in a layout effect, before paint)
+  // so there is never a frame of fully visible content first.
+  hide(targets, distance);
+
+  const cleanups: (() => void)[] = [];
+  if (now.length) {
+    const a = animate(now, {
+      opacity: [0, 1],
+      translateY: [distance, 0],
+      duration,
+      delay: stagger(step, { start: opts.delay ?? 0 }),
+      ease: EASE_OUT,
+      onComplete: () => clearInline(now),
+    });
+    cleanups.push(() => a.cancel());
   }
-  const anim = animate(targets, {
-    opacity: [0, 1],
-    translateY: [distance, 0],
-    duration: opts.duration ?? 460,
-    delay: stagger(step, { start: opts.delay ?? 0 }),
-    ease: EASE_OUT,
-    onComplete: () => clearInline(targets),
-  });
+  for (const el of later) {
+    cleanups.push(
+      whenScrolledIntoView(el, () => {
+        const a = animate(el, {
+          opacity: [0, 1],
+          translateY: [distance, 0],
+          duration,
+          ease: EASE_OUT,
+          onComplete: () => clearInline([el]),
+        });
+        return () => a.cancel();
+      }),
+    );
+  }
   return () => {
-    anim.cancel();
+    cleanups.forEach((c) => c());
     clearInline(targets);
   };
 }
@@ -109,9 +234,10 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(key: unknown, 
 
 /**
  * Two-level choreography: sections enter in order, and inside each section
- * its `[data-reveal-item]` children follow slightly behind. Used on the
- * Customer 360 page (identity -> behaviour -> transactions -> segments ->
- * intelligence) so hierarchy reads top-down without the page "flying in".
+ * its `[data-reveal-item]` children follow slightly behind. Sections on
+ * screen play as one timeline; sections further down play as they scroll
+ * into view. Used on the Customer 360 page (identity -> behaviour ->
+ * transactions -> segments -> intelligence).
  */
 export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unknown) {
   const ref = useRef<T>(null);
@@ -121,32 +247,57 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
     const sections = collect(root, "[data-stage]");
     if (sections.length === 0) return;
     const compact = matches(COMPACT_QUERY);
-    const distance = compact ? 6 : 12;
-    const sectionGap = compact ? 60 : 90;
+    const distance = compact ? 16 : 32;
+    const sectionGap = compact ? 90 : 140;
     const items = sections.map((s) => collect(s, "[data-reveal-item]"));
+    const visible = sections.map(inView);
     const all = [...sections, ...items.flat()];
+    hide(sections, distance);
+    hide(items.flat(), distance / 2);
 
-    for (const el of all) {
-      el.style.opacity = "0";
-      el.style.transform = `translateY(${distance}px)`;
-    }
-    const tl = createTimeline({
-      defaults: { duration: 480, ease: EASE_OUT },
-      onComplete: () => clearInline(all),
-    });
+    const cleanups: (() => void)[] = [];
+    const tl = createTimeline({ defaults: { duration: 900, ease: EASE_OUT } });
+    let slot = 0;
     sections.forEach((section, i) => {
-      const at = i * sectionGap;
-      tl.add(section, { opacity: [0, 1], translateY: [distance, 0] }, at);
-      if (items[i].length) {
-        tl.add(
-          items[i],
-          { opacity: [0, 1], translateY: [distance / 2, 0], duration: 380, delay: stagger(compact ? 25 : 35) },
-          at + 80,
-        );
+      const sectionItems = items[i];
+      if (visible[i]) {
+        const at = slot++ * sectionGap;
+        tl.add(section, { opacity: [0, 1], translateY: [distance, 0] }, at);
+        if (sectionItems.length) {
+          tl.add(sectionItems, { opacity: [0, 1], translateY: [distance / 2, 0], duration: 750, delay: stagger(compact ? 35 : 55) }, at + 120);
+        }
+        return;
       }
+      cleanups.push(
+        whenScrolledIntoView(section, () => {
+          const a = animate(section, {
+            opacity: [0, 1],
+            translateY: [distance, 0],
+            duration: 900,
+            ease: EASE_OUT,
+            onComplete: () => clearInline([section]),
+          });
+          const b = sectionItems.length
+            ? animate(sectionItems, {
+                opacity: [0, 1],
+                translateY: [distance / 2, 0],
+                duration: 750,
+                ease: EASE_OUT,
+                delay: stagger(compact ? 35 : 55, { start: 120 }),
+                onComplete: () => clearInline(sectionItems),
+              })
+            : null;
+          return () => {
+            a.cancel();
+            b?.cancel();
+          };
+        }),
+      );
     });
+    tl.call(() => clearInline(all.filter((el) => el.style.opacity === "1")), slot * sectionGap + 1400);
     return () => {
       tl.cancel();
+      cleanups.forEach((c) => c());
       clearInline(all);
     };
   }, [key]);
@@ -154,12 +305,53 @@ export function useStagedReveal<T extends HTMLElement = HTMLDivElement>(key: unk
 }
 
 /**
+ * Masked headline reveal: splits the element's text into words (Anime.js
+ * splitText, each word in a clipping wrapper) and slides every word up from
+ * behind its mask. The split is reverted when the animation finishes, so
+ * the DOM React owns is restored exactly.
+ */
+export function useSplitReveal<T extends HTMLElement = HTMLElement>(delay = 0) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotion()) return;
+    const split = splitText(el, { words: { wrap: "clip" } });
+    const words = split.words as HTMLElement[];
+    if (words.length === 0) {
+      split.revert();
+      return;
+    }
+    for (const w of words) w.style.transform = "translateY(110%)";
+    let reverted = false;
+    const finish = () => {
+      if (reverted) return;
+      reverted = true;
+      split.revert();
+    };
+    const anim = animate(words, {
+      translateY: ["110%", "0%"],
+      duration: 1000,
+      delay: stagger(55, { start: delay }),
+      ease: EASE_OUT,
+      onComplete: finish,
+    });
+    return () => {
+      anim.cancel();
+      finish();
+    };
+  }, [delay]);
+  return ref;
+}
+
+// ------------------------------------------------------------ numbers & bars
+
+/**
  * Counts a number up from zero once, on first render with a value. The
  * final formatted value is rendered by React from the start (so screen
  * readers, copy/paste, and reduced-motion users always get the real number);
  * the animation only temporarily rewrites the visible text.
  */
-export function useCountUp(value: number | null | undefined, format: (n: number) => string, duration = 700) {
+export function useCountUp(value: number | null | undefined, format: (n: number) => string, duration = 1100) {
   const ref = useRef<HTMLSpanElement>(null);
   const played = useRef(false);
   useEffect(
@@ -210,8 +402,8 @@ export function useMeter(key: unknown) {
     el.style.transform = "scaleX(0)";
     const anim = animate(el, {
       scaleX: [0, 1],
-      duration: 900,
-      delay: 120,
+      duration: 1300,
+      delay: 250,
       ease: "outExpo",
       onComplete: () => {
         el.style.transform = "";
@@ -233,5 +425,5 @@ export function slideTo(el: HTMLElement, y: number, height: number, instant: boo
     el.style.opacity = "1";
     return;
   }
-  animate(el, { translateY: y, opacity: 1, duration: 380, ease: "outExpo" });
+  animate(el, { translateY: y, opacity: 1, duration: 650, ease: "outElastic(1, .75)" });
 }

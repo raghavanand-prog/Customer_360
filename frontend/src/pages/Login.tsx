@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import IdentityGraphCanvas from "../components/IdentityGraphCanvas";
+import { SplitHeading } from "../components/Motion";
 
 const STATS = [
   { value: "34", label: "serving tables" },
@@ -85,9 +86,11 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 px-14 pb-16 max-w-xl motion-safe:animate-fade-in">
-          <h1 className="text-3xl font-semibold text-ink leading-tight tracking-tight">
-            One canonical view of every customer, assembled from contradictory sources.
-          </h1>
+          <SplitHeading
+            text="One canonical view of every customer, assembled from contradictory sources."
+            delay={250}
+            className="text-3xl xl:text-4xl font-semibold text-ink leading-tight tracking-tight"
+          />
           <p className="mt-4 text-sm text-ink-muted leading-relaxed">
             Customer360 resolves fragmented identity across a CRM, a loyalty programme, an app,
             and orders into a single auditable customer — with every merge traceable to the rule
@@ -190,6 +193,7 @@ export default function Login() {
 
             <button
               type="submit"
+              data-magnetic
               disabled={submitting}
               className="w-full inline-flex items-center justify-center gap-2 bg-accent text-surface font-medium rounded px-3 py-2.5 text-sm hover:bg-accent-dim active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >

@@ -149,6 +149,102 @@
   }
 }
 
+@layer components {
+  /* Pointer spotlight: a soft accent glow that follows the cursor across
+     cards (position fed by --mx/--my from CursorEffects). */
+  .card,
+  .card-interactive {
+    position: relative;
+  }
+  .card::after,
+  .card-interactive::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(45, 212, 167, 0.07), transparent 45%);
+  }
+  html[data-cursor="on"] .card:hover::after,
+  html[data-cursor="on"] .card-interactive:hover::after {
+    opacity: 1;
+  }
+
+  /* Magnetic buttons spring back with a slight overshoot when released. */
+  .btn {
+    transition-property: background-color, border-color, color, transform, opacity, translate;
+  }
+  .btn-primary,
+  .btn-accent-soft,
+  [data-magnetic] {
+    transition: translate 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+  }
+}
+
+/* Custom cursor (fine pointers only; native cursor stays visible). */
+.cursor-ring,
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  pointer-events: none;
+  border-radius: 9999px;
+  opacity: 0;
+  transition: opacity 0.25s ease, width 0.3s cubic-bezier(0.25, 1, 0.5, 1), height 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+    margin 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s, border-color 0.3s;
+}
+html[data-cursor="on"] .cursor-ring,
+html[data-cursor="on"] .cursor-dot {
+  opacity: 1;
+}
+.cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(45, 212, 167, 0.45);
+}
+.cursor-ring[data-state="hover"] {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  background: rgba(45, 212, 167, 0.07);
+  border-color: rgba(45, 212, 167, 0.7);
+}
+.cursor-ring[data-pressed] {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+}
+.cursor-dot {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  background: #2dd4a7;
+}
+.cursor-ring[data-state="text"],
+.cursor-dot[data-state="text"],
+.cursor-dot[data-state="hover"] {
+  opacity: 0 !important;
+}
+
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
 /* Users who ask for reduced motion get no decorative animation: loops stop,
    transitions become effectively instant. JS-driven (Anime.js) motion checks
    the same media query in src/lib/motion.ts and skips itself entirely. */
