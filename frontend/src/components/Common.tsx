@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useCountUp, useMeter } from "../lib/motion";
 import { Icon } from "./Icons";
+import { SplitHeading } from "./Motion";
 
 // ---------------------------------------------------------------- formatting
 
@@ -120,8 +121,12 @@ export function PageHeader({
         </nav>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-ink tracking-tight">{title}</h1>
+        <div className="min-w-0" data-parallax="0.35" data-parallax-fade>
+          {typeof title === "string" ? (
+            <SplitHeading key={title} text={title} className="text-xl sm:text-2xl font-semibold text-ink tracking-tight" />
+          ) : (
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">{title}</h1>
+          )}
           {subtitle && <p className="text-sm text-ink-muted mt-1 max-w-2xl">{subtitle}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}

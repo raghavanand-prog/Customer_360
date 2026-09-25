@@ -1,7 +1,9 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Shell from "./components/Shell";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { CursorEffects, IntroSequence } from "./components/Motion";
+import { initParallax, initSmoothScroll } from "./lib/motion";
 
 // Route-level code splitting: the charting library only loads with the
 // Analytics screen, and the login hero canvas only with Login.
@@ -28,24 +30,37 @@ function FullScreenFallback() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const stopScroll = initSmoothScroll();
+    const stopParallax = initParallax();
+    return () => {
+      stopScroll();
+      stopParallax();
+    };
+  }, []);
+
   return (
-    <Suspense fallback={<FullScreenFallback />}>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Shell />}>
-            <Route path="/" element={<Overview />} />
-            <Route path="/customers" element={<CustomerSearch />} />
-            <Route path="/customers/:id" element={<CustomerProfilePage />} />
-            <Route path="/segments" element={<Segments />} />
-            <Route path="/segments/:id" element={<SegmentDetail />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/quality" element={<DataQuality />} />
-            <Route path="/pipeline" element={<PipelineRuns />} />
-            <Route path="/system" element={<SystemHealth />} />
+    <>
+      <IntroSequence />
+      <CursorEffects />
+      <Suspense fallback={<FullScreenFallback />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Shell />}>
+              <Route path="/" element={<Overview />} />
+              <Route path="/customers" element={<CustomerSearch />} />
+              <Route path="/customers/:id" element={<CustomerProfilePage />} />
+              <Route path="/segments" element={<Segments />} />
+              <Route path="/segments/:id" element={<SegmentDetail />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/quality" element={<DataQuality />} />
+              <Route path="/pipeline" element={<PipelineRuns />} />
+              <Route path="/system" element={<SystemHealth />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </>
   );
 }

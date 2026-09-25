@@ -97,7 +97,7 @@ export default function CustomerProfilePage() {
     <div>
       <PageHeader
         crumbs={[{ label: "Customers", to: "/customers" }, { label: canonicalId }]}
-        title={profile.full_name_display || <span className="text-ink-muted">Unnamed customer</span>}
+        title={profile.full_name_display || "Unnamed customer"}
         subtitle={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-faint">
             <span className="font-mono">{canonicalId}</span>
