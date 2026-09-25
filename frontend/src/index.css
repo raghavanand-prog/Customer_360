@@ -95,8 +95,26 @@
     @apply w-full text-sm border-collapse tabular-nums;
   }
   table.data-table th {
-    @apply text-left text-[11px] uppercase tracking-[0.06em] text-ink-faint font-medium px-4 py-2.5
+    @apply text-[11px] uppercase tracking-[0.06em] text-ink-faint font-medium px-4 py-2.5
       border-b border-surface-border bg-white/[0.015] whitespace-nowrap;
+  }
+  /* Default alignment at zero specificity so a `text-right` utility on a
+     numeric column header wins and the header lines up with its values. */
+  :where(table.data-table th) {
+    text-align: left;
+  }
+
+  /* Horizontally scrollable region (wide tables on narrow screens). Edge
+     shadows appear only on the side that has more content, via the
+     local/scroll background-attachment technique: no JS, no scroll listener. */
+  .scroll-x {
+    overflow-x: auto;
+    background:
+      linear-gradient(to right, #15181c 40%, rgba(21, 24, 28, 0)) left center / 32px 100% no-repeat local,
+      linear-gradient(to left, #15181c 40%, rgba(21, 24, 28, 0)) right center / 32px 100% no-repeat local,
+      linear-gradient(to right, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0)) left center / 14px 100% no-repeat scroll,
+      linear-gradient(to left, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0)) right center / 14px 100% no-repeat scroll;
+    background-color: #15181c;
   }
   table.data-table td {
     @apply px-4 py-2.5 border-b border-surface-border/60 text-ink whitespace-nowrap;
@@ -146,6 +164,13 @@
   }
   .meter > span {
     @apply block h-full rounded-full origin-left;
+  }
+
+  /* Loading/empty/error panels fade in so a state change reads as a change,
+     not a flash. (Reduced motion: the global rule below makes it instant.) */
+  .state-panel {
+    @apply animate-fade-in;
+    animation-duration: 0.35s;
   }
 }
 

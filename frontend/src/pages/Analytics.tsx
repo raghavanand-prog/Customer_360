@@ -3,7 +3,7 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../lib/api";
 import { useReducedMotion, useReveal } from "../lib/motion";
-import { EmptyState, ErrorState, Loading, PageBody, PageHeader, SectionHeader, formatCompactCurrency, formatCurrency, formatInt } from "../components/Common";
+import { EmptyState, ErrorState, Loading, PageBody, PageHeader, SectionHeader, formatCompactCurrency, formatCompactInt, formatCurrency, formatInt } from "../components/Common";
 
 const C = {
   accent: "#2dd4a7",
@@ -38,6 +38,46 @@ const tooltipProps = {
 
 const axisProps = { stroke: C.axis, fontSize: 11, tickLine: false, axisLine: false, tickMargin: 8 } as const;
 
+// The API returns month starts as ISO dates ("2026-09-01"); show "Sep 26".
+function formatPeriod(period: string): string {
+  const d = new Date(period.length === 7 ? `${period}-01` : period);
+  if (Number.isNaN(d.getTime())) return period;
+  return d.toLocaleDateString("en-IN", { month: "short", year: "2-digit", timeZone: "UTC" });
+}
+
+function truncate(label: string, max = 14): string {
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}
+
+type RevenueRow = { period: string; revenue: number; orders: number };
+
+/**
+ * Window total and peak month. Deliberately no "vs last month": the window is
+ * now() - N months, so the first and latest months are partial and a
+ * month-over-month delta would be misleading.
+ */
+function RevenueSummary({ rows }: { rows: RevenueRow[] }) {
+  const total = rows.reduce((a, r) => a + Number(r.revenue), 0);
+  const peak = rows.reduce((best, r) => (Number(r.revenue) > Number(best.revenue) ? r : best), rows[0]);
+  return (
+    <dl className="flex items-start gap-6 text-right shrink-0">
+      <div>
+        <dt className="stat-label">Window total</dt>
+        <dd className="text-sm font-semibold text-ink tabular-nums mt-0.5" title={formatCurrency(total)}>
+          {formatCompactCurrency(total)}
+        </dd>
+      </div>
+      <div className="hidden sm:block">
+        <dt className="stat-label">Peak month</dt>
+        <dd className="text-sm font-semibold text-ink tabular-nums mt-0.5">
+          {formatCompactCurrency(Number(peak.revenue))}
+          <span className="ml-1.5 text-xs font-normal text-ink-faint">{formatPeriod(peak.period)}</span>
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
 function ChartCard<T>({
   title,
   description,
@@ -45,6 +85,7 @@ function ChartCard<T>({
   height,
   emptyMessage,
   className = "",
+  summary,
   children,
 }: {
   title: string;
@@ -53,17 +94,19 @@ function ChartCard<T>({
   height: number;
   emptyMessage: string;
   className?: string;
+  /** headline figures derived from the rows, shown beside the title */
+  summary?: (data: T[]) => ReactNode;
   children: (data: T[]) => ReactNode;
 }) {
   return (
     <section data-reveal className={`card p-4 sm:p-5 min-w-0 ${className}`}>
-      <SectionHeader title={title} description={description} />
+      <SectionHeader title={title} description={description} actions={summary && query.data?.length ? summary(query.data) : undefined} />
       {query.isLoading && (
         <Loading label={`Loading ${title.toLowerCase()}`}>
           <div className="skeleton w-full rounded-md" style={{ height }} aria-hidden="true" />
         </Loading>
       )}
-      {query.isError && <ErrorState message={`Could not load ${title.toLowerCase()}.`} onRetry={() => query.refetch()} />}
+      {query.isError && <ErrorState message={`Could not load ${title.toLowerCase()}.`} error={query.error} onRetry={() => query.refetch()} retrying={query.isFetching} />}
       {query.data && query.data.length === 0 && <EmptyState message={emptyMessage} />}
       {query.data && query.data.length > 0 && <div style={{ height }}>{children(query.data)}</div>}
     </section>
@@ -76,7 +119,7 @@ export default function Analytics() {
 
   const revenue = useQuery({
     queryKey: ["revenue"],
-    queryFn: async () => (await api.get<{ items: { period: string; revenue: number; orders: number }[] }>("/analytics/revenue")).data.items,
+    queryFn: async () => (await api.get<{ items: RevenueRow[] }>("/analytics/revenue")).data.items,
   });
   const topCustomers = useQuery({
     queryKey: ["top-customers"],
@@ -102,6 +145,7 @@ export default function Analytics() {
             height={280}
             emptyMessage="No revenue data yet."
             className="lg:col-span-2"
+            summary={(rows) => <RevenueSummary rows={rows} />}
           >
             {(rows) => (
               <ResponsiveContainer width="100%" height="100%">
@@ -113,9 +157,9 @@ export default function Analytics() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke={C.grid} vertical={false} />
-                  <XAxis dataKey="period" {...axisProps} minTickGap={24} />
+                  <XAxis dataKey="period" {...axisProps} minTickGap={24} tickFormatter={formatPeriod} />
                   <YAxis {...axisProps} width={64} tickFormatter={(v: number) => formatCompactCurrency(v)} />
-                  <Tooltip {...tooltipProps} formatter={(v) => [formatCurrency(Number(v)), "Revenue"]} />
+                  <Tooltip {...tooltipProps} formatter={(v) => [formatCurrency(Number(v)), "Revenue"]} labelFormatter={(l) => formatPeriod(String(l))} />
                   <Area type="monotone" dataKey="revenue" stroke={C.accent} strokeWidth={2} fill="url(#revenueFill)" activeDot={{ r: 4, strokeWidth: 0 }} {...anim} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -132,7 +176,7 @@ export default function Analytics() {
                 >
                   <CartesianGrid stroke={C.grid} horizontal={false} />
                   <XAxis type="number" {...axisProps} tickFormatter={(v: number) => formatCompactCurrency(v)} />
-                  <YAxis type="category" dataKey="label" {...axisProps} width={110} />
+                  <YAxis type="category" dataKey="label" {...axisProps} width={104} tickFormatter={(v: string) => truncate(v)} />
                   <Tooltip {...tooltipProps} formatter={(v) => [formatCurrency(Number(v)), "Total spend"]} />
                   <Bar dataKey="total_spend" fill={C.accent} fillOpacity={0.85} radius={[0, 3, 3, 0]} barSize={14} {...anim} />
                 </BarChart>
@@ -146,7 +190,7 @@ export default function Analytics() {
                 <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke={C.grid} vertical={false} />
                   <XAxis dataKey="churn_risk_band" {...axisProps} tickFormatter={(v: string) => v.replace(/_/g, " ")} />
-                  <YAxis {...axisProps} width={48} tickFormatter={(v: number) => formatInt(v)} />
+                  <YAxis {...axisProps} width={44} tickFormatter={(v: number) => formatCompactInt(v)} />
                   <Tooltip {...tooltipProps} formatter={(v) => [formatInt(Number(v)), "Customers"]} labelFormatter={(l) => String(l).replace(/_/g, " ")} />
                   <Bar dataKey="customers" radius={[3, 3, 0, 0]} maxBarSize={56} {...anim}>
                     {rows.map((r) => (

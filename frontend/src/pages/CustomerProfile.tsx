@@ -7,16 +7,20 @@ import { useStagedReveal } from "../lib/motion";
 import {
   ChurnBadge,
   ErrorState,
+  FactStrip,
   Loading,
   PageHeader,
+  ShareBar,
   Skeleton,
   SkeletonTable,
   SkeletonTiles,
   StatTile,
+  StatusBadge,
   formatCurrency,
   formatDate,
   formatDateTime,
   formatInt,
+  sourceLabel,
 } from "../components/Common";
 import { AiAssistantPanel, type AssistantHandle } from "../components/AiAssistant";
 import { Icon } from "../components/Icons";
@@ -70,7 +74,7 @@ export default function CustomerProfilePage() {
   const { id } = useParams<{ id: string }>();
   const assistantRef = useRef<AssistantHandle>(null);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, error, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["customer-profile", id],
     queryFn: async () => (await api.get<CustomerProfile>(`/customers/${id}/profile`)).data,
     enabled: !!id,
@@ -82,7 +86,7 @@ export default function CustomerProfilePage() {
     return (
       <div>
         <PageHeader title="Customer" crumbs={[{ label: "Customers", to: "/customers" }, { label: id ?? "" }]} />
-        <ErrorState message="Could not load this customer." onRetry={() => refetch()} />
+        <ErrorState message="Could not load this customer." error={error} onRetry={() => refetch()} retrying={isFetching} />
       </div>
     );
   if (!data) return null;
@@ -113,6 +117,21 @@ export default function CustomerProfilePage() {
             )}
           </span>
         }
+        meta={
+          <FactStrip
+            facts={[
+              { label: "Lifetime spend", value: formatCurrency(metrics?.total_spend ?? null) },
+              { label: "Orders", value: metrics ? formatInt(metrics.order_count) : "—" },
+              {
+                label: "Last order",
+                value: formatDate(metrics?.last_order_at),
+                hint: metrics?.days_since_last_order != null ? `${formatInt(metrics.days_since_last_order)}d ago` : undefined,
+              },
+              { label: "RFM", value: metrics?.rfm_segment ?? "—" },
+              { label: "Segments", value: formatInt(data.segments.length) },
+            ]}
+          />
+        }
         actions={
           <>
             <ChurnBadge band={metrics?.churn_risk_band ?? null} />
@@ -132,23 +151,36 @@ export default function CustomerProfilePage() {
             <StatTile label="Phone" value={<span className="text-sm font-medium">{profile.primary_phone ?? "—"}</span>} />
             <StatTile label="Location" value={<span className="text-sm font-medium">{location || "—"}</span>} />
           </div>
-          <div data-reveal-item className="card overflow-x-auto">
+          <div data-reveal-item className="card scroll-x">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Source system</th>
                   <th>Source record ID</th>
                   <th>Namespace</th>
-                  <th>First seen</th>
+                  <th className="w-32">Match confidence</th>
+                  <th className="hidden xl:table-cell">First seen</th>
                 </tr>
               </thead>
               <tbody>
-                {data.identity.identities.map((idn) => (
+                {data.identity.identities.map((idn, i) => (
                   <tr key={idn.identity_id}>
-                    <td className="capitalize">{idn.source_system}</td>
+                    <td>{sourceLabel(idn.source_system)}</td>
                     <td className="font-mono text-xs text-ink-muted">{idn.source_record_id}</td>
                     <td className="text-ink-muted">{idn.identity_namespace}</td>
-                    <td className="text-ink-muted">{formatDateTime(idn.first_seen_at)}</td>
+                    <td>
+                      {idn.confidence === null ? (
+                        <span className="text-ink-faint">—</span>
+                      ) : (
+                        <div className="flex items-center gap-2.5">
+                          <span className="tabular-nums text-xs text-ink-muted w-9">{Math.round(idn.confidence * 100)}%</span>
+                          <div className="flex-1 min-w-[48px]">
+                            <ShareBar pct={idn.confidence * 100} className="bg-accent/60" delay={260 + i * 60} animateKey={canonicalId} />
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="hidden xl:table-cell text-ink-muted">{formatDateTime(idn.first_seen_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -183,13 +215,13 @@ export default function CustomerProfilePage() {
 
         <Stage index="03" title="Transactions" description="Order history and lifetime commerce totals.">
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mb-3">
-            <StatTile label="Total spend" count={metrics?.total_spend ?? null} format={formatCurrency} emphasis />
+            <StatTile label="Total spend" count={metrics?.total_spend ?? null} format={formatCurrency} emphasis className="col-span-2 sm:col-span-1" />
             <StatTile label="Orders" count={metrics?.order_count ?? 0} format={formatInt} emphasis />
             <StatTile label="AOV" value={formatCurrency(metrics?.aov ?? null)} />
             <StatTile label="First order" value={<span className="text-base">{formatDate(metrics?.first_order_at)}</span>} />
             <StatTile label="Last order" value={<span className="text-base">{formatDate(metrics?.last_order_at)}</span>} />
           </div>
-          <div data-reveal-item className="card overflow-x-auto">
+          <div data-reveal-item className="card scroll-x">
             {data.orders.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-ink-faint">No orders on record.</div>
             ) : (
@@ -199,7 +231,7 @@ export default function CustomerProfilePage() {
                     <th>Order</th>
                     <th>Date</th>
                     <th>Status</th>
-                    <th>Channel</th>
+                    <th className="hidden sm:table-cell">Channel</th>
                     <th className="text-right">Amount</th>
                   </tr>
                 </thead>
@@ -208,8 +240,10 @@ export default function CustomerProfilePage() {
                     <tr key={o.order_id}>
                       <td className="font-mono text-xs text-ink-muted">{o.order_id}</td>
                       <td className="text-ink-muted">{formatDate(o.order_ts)}</td>
-                      <td className="capitalize">{o.order_status}</td>
-                      <td className="capitalize text-ink-muted">{o.channel ?? "—"}</td>
+                      <td>
+                        <StatusBadge status={o.order_status} />
+                      </td>
+                      <td className="hidden sm:table-cell capitalize text-ink-muted">{o.channel ?? "—"}</td>
                       <td className="text-right">{formatCurrency(o.revenue_amount)}</td>
                     </tr>
                   ))}

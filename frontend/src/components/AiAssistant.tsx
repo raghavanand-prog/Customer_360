@@ -358,7 +358,7 @@ export function AiAssistantPanel({ customerId, ref }: { customerId?: string; ref
     <section ref={sectionRef} className="card overflow-hidden scroll-mt-20" aria-labelledby="assistant-title">
       <div className="px-4 sm:px-5 py-4 border-b border-surface-border bg-white/[0.012]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
             <span className="h-8 w-8 rounded-md bg-accent/10 border border-accent/20 text-accent flex items-center justify-center shrink-0">
               <Icon.Prompt size={15} />
             </span>
@@ -371,7 +371,7 @@ export function AiAssistantPanel({ customerId, ref }: { customerId?: string; ref
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:justify-end">
+          <div className="flex items-center gap-2 sm:justify-end sm:shrink-0">
             <ProviderStatus status={status} isError={statusQuery.isError} />
             {turns.length > 0 && (
               <button onClick={() => setTurns([])} className="btn-ghost" disabled={loading}>
@@ -408,7 +408,7 @@ export function AiAssistantPanel({ customerId, ref }: { customerId?: string; ref
                 <button
                   key={q}
                   onClick={() => ask(q)}
-                  className="text-left text-xs px-2.5 py-1.5 rounded-md border border-surface-border bg-surface-sunken/60 text-ink-muted hover:text-ink hover:border-accent/40 hover:bg-accent/[0.04] transition-colors"
+                  className="text-left text-xs px-2.5 py-1.5 rounded-md border border-surface-border bg-surface-sunken/60 text-ink-muted hover:text-ink hover:border-accent/40 hover:bg-accent/[0.04] transition-[color,background-color,border-color,transform] duration-150 ease-out-quart motion-safe:active:scale-[0.98]"
                 >
                   {q}
                 </button>

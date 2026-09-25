@@ -10,6 +10,7 @@ import {
   Meter,
   PageBody,
   PageHeader,
+  ShareBar,
   SkeletonTable,
   SkeletonTiles,
   StatTile,
@@ -55,17 +56,20 @@ function DatasetDetail({ dataset }: { dataset: DatasetQualityScore }) {
     queryFn: async () => (await api.get<{ rules: RuleResult[] }>(`/quality/datasets/${dataset.dataset}`)).data,
   });
   const revealRef = useReveal(detail.data ? dataset.dataset : null, { step: 30, distance: 6 });
+  // Opening the drill-down: the six dimensions arrive left-to-right (they are
+  // already known from the summary), then rule rows follow once they load.
+  const dimsRef = useReveal(dataset.dataset, { step: 35, distance: 6, selector: "[data-reveal-dim]" });
 
   return (
-    <div ref={revealRef} className="p-4 sm:p-5 space-y-5">
+    <div ref={revealRef} className="p-4 sm:p-5 space-y-5 whitespace-normal">
       <div>
         <div className="stat-label mb-2.5">Dimension scores</div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div ref={dimsRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {DIMENSIONS.map(({ key, label }) => {
             const v = dataset[key] as number | null;
             const tone = scoreTone(v);
             return (
-              <div key={key} className="min-w-0">
+              <div key={key} data-reveal-dim className="min-w-0">
                 <div className="flex items-baseline justify-between gap-2 text-xs">
                   <span className="text-ink-faint truncate">{label}</span>
                   <span className={`tabular-nums font-medium ${TONE_TEXT[tone]}`}>{v === null ? "—" : formatScore(v)}</span>
@@ -86,10 +90,10 @@ function DatasetDetail({ dataset }: { dataset: DatasetQualityScore }) {
             <SkeletonTable rows={4} cols={6} />
           </Loading>
         )}
-        {detail.isError && <ErrorState message="Could not load rule results." onRetry={() => detail.refetch()} />}
+        {detail.isError && <ErrorState message="Could not load rule results." error={detail.error} onRetry={() => detail.refetch()} retrying={detail.isFetching} />}
         {detail.data && detail.data.rules.length === 0 && <div className="text-sm text-ink-faint">No rules apply to this dataset.</div>}
         {detail.data && detail.data.rules.length > 0 && (
-          <div className="rounded-md border border-surface-border overflow-x-auto bg-surface-raised">
+          <div className="scroll-x rounded-md border border-surface-border">
             <table className="data-table">
               <thead>
                 <tr>
@@ -119,8 +123,13 @@ function DatasetDetail({ dataset }: { dataset: DatasetQualityScore }) {
                     <td>
                       <div className="flex items-center gap-2">
                         <span className="tabular-nums text-xs w-12 text-right text-ink-muted">{(r.failure_rate * 100).toFixed(1)}%</span>
-                        <div className="meter flex-1" aria-hidden="true">
-                          <span className={r.records_failed > 0 ? "bg-warn/70" : "bg-accent/40"} style={{ width: `${Math.max(r.failure_rate * 100, r.records_failed > 0 ? 2 : 0)}%` }} />
+                        <div className="flex-1">
+                          {/* A non-zero failure always shows at least a sliver. */}
+                          <ShareBar
+                            pct={Math.max(r.failure_rate * 100, r.records_failed > 0 ? 2 : 0)}
+                            className={r.records_failed > 0 ? "bg-warn/70" : "bg-accent/40"}
+                            delay={200}
+                          />
                         </div>
                       </div>
                     </td>
@@ -168,8 +177,8 @@ export default function DataQuality() {
             </div>
           </Loading>
         )}
-        {summary.isError && <ErrorState message="Could not load data quality summary." onRetry={() => summary.refetch()} />}
-        {summary.data && datasets.length === 0 && <EmptyState message="No pipeline run has completed yet." />}
+        {summary.isError && <ErrorState message="Could not load data quality summary." error={summary.error} onRetry={() => summary.refetch()} retrying={summary.isFetching} />}
+        {summary.data && datasets.length === 0 && <EmptyState message="No pipeline run has completed yet." hint="Scores appear here after the first successful run." />}
 
         {datasets.length > 0 && (
           <div ref={revealRef} className="space-y-6">
@@ -191,14 +200,14 @@ export default function DataQuality() {
               <StatTile label="Rejected records" count={rejected} tone={rejected > 0 ? "bad" : undefined} sub={`Latest run #${summary.data?.run_id ?? "—"}`} />
             </div>
 
-            <div data-reveal className="card overflow-x-auto">
+            <div data-reveal className="card scroll-x">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Dataset</th>
                     <th className="text-right">Ingested</th>
                     <th className="text-right">Accepted</th>
-                    <th className="text-right">Warned</th>
+                    <th className="hidden xl:table-cell text-right">Warned</th>
                     <th className="text-right">Quarantined</th>
                     <th className="text-right">Rejected</th>
                     <th className="w-44">Score</th>
@@ -232,7 +241,7 @@ export default function DataQuality() {
                           </td>
                           <td className="text-right text-ink-muted">{formatInt(d.records_ingested)}</td>
                           <td className="text-right text-ink-muted">{formatInt(d.records_accepted)}</td>
-                          <td className="text-right text-ink-muted">{formatInt(d.records_warned)}</td>
+                          <td className="hidden xl:table-cell text-right text-ink-muted">{formatInt(d.records_warned)}</td>
                           <td className={`text-right ${d.records_quarantined > 0 ? "text-warn" : "text-ink-muted"}`}>{formatInt(d.records_quarantined)}</td>
                           <td className={`text-right ${d.records_rejected > 0 ? "text-danger" : "text-ink-muted"}`}>{formatInt(d.records_rejected)}</td>
                           <td>

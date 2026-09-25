@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useReveal } from "../lib/motion";
+import { RuleView } from "../components/RuleView";
 import {
   EmptyState,
   ErrorState,
@@ -61,7 +62,7 @@ export default function SegmentDetail() {
     return (
       <div>
         <PageHeader title="Segment" crumbs={[{ label: "Segments", to: "/segments" }, { label: id ?? "" }]} />
-        <ErrorState message="Could not load this segment." onRetry={() => detail.refetch()} />
+        <ErrorState message="Could not load this segment." error={detail.error ?? undefined} onRetry={() => detail.refetch()} retrying={detail.isFetching} />
       </div>
     );
 
@@ -89,10 +90,15 @@ export default function SegmentDetail() {
           </div>
 
           <section data-reveal className="card p-4 sm:p-5">
-            <SectionHeader title="Rule definition" description="JSON rule AST, compiled to parameterised SQL on every run." />
-            <pre className="text-xs leading-relaxed bg-surface-sunken border border-surface-border rounded-md p-4 overflow-x-auto text-ink-muted font-mono">
-              {JSON.stringify(detail.data.version?.rule_ast, null, 2)}
-            </pre>
+            <SectionHeader
+              title="Rule definition"
+              description="Version's rule AST with thresholds resolved; compiled to parameterised SQL on every run."
+            />
+            {detail.data.version ? (
+              <RuleView ast={detail.data.version.rule_ast} thresholds={detail.data.version.thresholds} />
+            ) : (
+              <p className="text-sm text-ink-faint">No rule version recorded for this segment.</p>
+            )}
           </section>
 
           <section data-reveal className="card overflow-hidden">
@@ -106,10 +112,10 @@ export default function SegmentDetail() {
                 </div>
               </Loading>
             )}
-            {members.isError && <ErrorState message="Could not load segment members." onRetry={() => members.refetch()} />}
+            {members.isError && <ErrorState message="Could not load segment members." error={members.error} onRetry={() => members.refetch()} retrying={members.isFetching} />}
             {members.data && members.data.length === 0 && <EmptyState message="No customers currently qualify." />}
             {members.data && members.data.length > 0 && (
-              <div className="overflow-x-auto border-t border-surface-border">
+              <div className="scroll-x border-t border-surface-border">
                 <table className="data-table">
                   <thead>
                     <tr>

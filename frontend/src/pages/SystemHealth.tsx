@@ -11,6 +11,7 @@ import {
   SkeletonTiles,
   StatTile,
   StatusDot,
+  TONE_BG,
   TONE_TEXT,
   formatDateTime,
   type Tone,
@@ -43,8 +44,57 @@ function StatusValue({ value }: { value: string }) {
   );
 }
 
+function overallTone(d: HealthDetail): Tone {
+  const tones = [healthTone(d.status), healthTone(d.database)];
+  return tones.includes("bad") ? "bad" : tones.includes("warn") ? "warn" : "good";
+}
+
+const OVERALL_TITLE: Record<string, string> = {
+  good: "All systems operational",
+  warn: "Degraded performance",
+  bad: "Service disruption",
+};
+
+/**
+ * The page's one-line answer, derived only from the two checks the API
+ * reports. The hairline at the bottom fills over the refresh interval and
+ * restarts on every check, so "live" is visible rather than claimed.
+ */
+function StatusBanner({ data, checkedAt }: { data: HealthDetail; checkedAt: number }) {
+  const tone = overallTone(data);
+  const box = { good: "border-accent/20 bg-accent/[0.04]", warn: "border-warn/25 bg-warn/[0.05]", bad: "border-danger/25 bg-danger/[0.05]" }[
+    tone as "good" | "warn" | "bad"
+  ];
+  return (
+    <section data-reveal className={`relative overflow-hidden rounded-lg border px-4 py-3.5 sm:px-5 ${box}`} aria-live="polite">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <StatusDot tone={tone} />
+          <h2 className={`text-sm font-semibold ${TONE_TEXT[tone]}`}>{OVERALL_TITLE[tone]}</h2>
+        </div>
+        <p className="text-xs text-ink-faint sm:text-right">
+          API <span className="text-ink-muted">{data.status}</span> · database <span className="text-ink-muted">{data.database}</span>
+          {data.last_successful_run && (
+            <>
+              {" "}
+              · last run <span className="font-mono text-ink-muted">#{data.last_successful_run.run_id}</span> finished{" "}
+              {formatDateTime(data.last_successful_run.finished_at)}
+            </>
+          )}
+        </p>
+      </div>
+      <span
+        key={checkedAt}
+        className={`absolute left-0 bottom-0 h-px w-full origin-left animate-countdown motion-reduce:hidden ${TONE_BG[tone]} opacity-40`}
+        style={{ animationDuration: `${REFRESH_MS}ms` }}
+        aria-hidden="true"
+      />
+    </section>
+  );
+}
+
 export default function SystemHealth() {
-  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useQuery({
+  const { data, error, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useQuery({
     queryKey: ["health-detail"],
     queryFn: async () => (await api.get<HealthDetail>("/health/detail")).data,
     refetchInterval: REFRESH_MS,
@@ -78,9 +128,10 @@ export default function SystemHealth() {
             <SkeletonTiles />
           </Loading>
         )}
-        {isError && <ErrorState message="Could not reach the health endpoint." onRetry={() => refetch()} />}
+        {isError && <ErrorState message="Could not reach the health endpoint." error={error} onRetry={() => refetch()} retrying={isFetching} />}
         {data && (
           <div ref={revealRef} className="space-y-6">
+            <StatusBanner data={data} checkedAt={dataUpdatedAt} />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatTile label="API status" value={<StatusValue value={data.status} />} />
               <StatTile label="Database" value={<StatusValue value={data.database} />} />

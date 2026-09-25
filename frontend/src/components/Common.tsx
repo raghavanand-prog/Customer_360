@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { describeError } from "../lib/api";
 import { useCountUp, useMeter } from "../lib/motion";
 import { Icon } from "./Icons";
 
@@ -37,10 +38,27 @@ export function formatDateTime(value: string | null | undefined): string {
   return new Date(value).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+export function formatCompactInt(value: number): string {
+  return new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
+/** 850ms · 48.0s · 14m 07s · 2h 05m */
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined) return "—";
   if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  const totalSec = Math.round(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m ${String(s).padStart(2, "0")}s`;
+}
+
+const SOURCE_LABELS: Record<string, string> = { crm: "CRM", app: "App", pos: "POS", erp: "ERP" };
+
+/** Source-system codes as people say them (CRM, not "Crm"). */
+export function sourceLabel(system: string): string {
+  return SOURCE_LABELS[system.toLowerCase()] ?? system.charAt(0).toUpperCase() + system.slice(1);
 }
 
 // ---------------------------------------------------------------- tones
@@ -91,11 +109,14 @@ export function PageHeader({
   subtitle,
   actions,
   crumbs,
+  meta,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   crumbs?: { label: string; to?: string }[];
+  /** full-width row under the title (e.g. an entity's key facts) */
+  meta?: React.ReactNode;
 }) {
   return (
     <header className="px-4 sm:px-6 lg:px-8 pt-5 pb-5 border-b border-surface-border">
@@ -124,9 +145,27 @@ export function PageHeader({
           <h1 className="text-xl font-semibold text-ink tracking-tight">{title}</h1>
           {subtitle && <p className="text-sm text-ink-muted mt-1 max-w-2xl">{subtitle}</p>}
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
       </div>
+      {meta && <div className="mt-4">{meta}</div>}
     </header>
+  );
+}
+
+/** Inline key-facts row: label over value, wraps on narrow screens. */
+export function FactStrip({ facts }: { facts: { label: string; value: React.ReactNode; hint?: string }[] }) {
+  return (
+    <dl className="flex flex-wrap gap-x-8 gap-y-3">
+      {facts.map((f) => (
+        <div key={f.label} className="min-w-0">
+          <dt className="stat-label">{f.label}</dt>
+          <dd className="mt-1 text-sm font-medium text-ink tabular-nums">
+            {f.value}
+            {f.hint && <span className="ml-1.5 text-xs font-normal text-ink-faint">{f.hint}</span>}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -298,34 +337,80 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
   );
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+/**
+ * Failed request. When the query's `error` is passed, the panel says what the
+ * API actually returned (HTTP status + its message) and shows the request id
+ * an operator can quote -- instead of a generic "something went wrong".
+ */
+export function ErrorState({
+  message,
+  error,
+  onRetry,
+  retrying = false,
+}: {
+  message: string;
+  error?: unknown;
+  onRetry?: () => void;
+  retrying?: boolean;
+}) {
+  const info = error === undefined ? null : describeError(error);
   return (
-    <div role="alert" className="flex flex-col items-center justify-center text-center py-14 gap-3">
+    <div role="alert" className="state-panel flex flex-col items-center justify-center text-center py-14 gap-3">
       <span className="h-9 w-9 rounded-full bg-danger/10 text-danger flex items-center justify-center">
         <Icon.Alert />
       </span>
       <div>
         <div className="text-sm text-ink">{message}</div>
-        <div className="text-xs text-ink-faint mt-0.5">The API returned an error or could not be reached.</div>
+        <div className="text-xs text-ink-faint mt-0.5">{info ? info.detail : "The API returned an error or could not be reached."}</div>
+        {info?.requestId && (
+          <div className="text-2xs text-ink-faint mt-1.5">
+            Request ID <span className="font-mono text-ink-muted select-all">{info.requestId}</span>
+          </div>
+        )}
       </div>
       {onRetry && (
-        <button onClick={onRetry} className="btn-secondary text-xs px-3 py-1.5">
-          <Icon.Refresh size={13} />
-          Retry
+        <button onClick={onRetry} disabled={retrying} className="btn-secondary text-xs px-3 py-1.5">
+          <Icon.Refresh size={13} className={retrying ? "motion-safe:animate-spin" : ""} />
+          {retrying ? "Retrying…" : "Retry"}
         </button>
       )}
     </div>
   );
 }
 
-export function EmptyState({ message, hint }: { message: string; hint?: string }) {
+export function EmptyState({ message, hint, action }: { message: string; hint?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-14 gap-2">
+    <div className="state-panel flex flex-col items-center justify-center text-center py-14 gap-2">
       <span className="h-9 w-9 rounded-full bg-white/[0.04] text-ink-faint flex items-center justify-center">
         <Icon.Info />
       </span>
       <div className="text-sm text-ink-muted">{message}</div>
       {hint && <div className="text-xs text-ink-faint max-w-sm">{hint}</div>}
+      {action && <div className="mt-2">{action}</div>}
+    </div>
+  );
+}
+
+/**
+ * Decorative share-of-max bar (the number beside it carries the meaning, so
+ * it is aria-hidden). Grows from the left on first render; `delay` lets it
+ * follow its container's entrance.
+ */
+export function ShareBar({
+  pct,
+  className = "bg-accent/50",
+  delay,
+  animateKey = true,
+}: {
+  pct: number;
+  className?: string;
+  delay?: number;
+  animateKey?: unknown;
+}) {
+  const ref = useMeter(animateKey, delay);
+  return (
+    <div className="meter" aria-hidden="true">
+      <span ref={ref} className={className} style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
     </div>
   );
 }
@@ -369,6 +454,8 @@ const STATUS_TONES: Record<string, Tone> = {
   running: "info",
   pending: "neutral",
   skipped: "neutral",
+  cancelled: "neutral",
+  refunded: "warn",
   failed: "bad",
   error: "bad",
 };

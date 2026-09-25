@@ -95,7 +95,8 @@ export default function Login() {
           </p>
           <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-surface-border pt-6">
             {STATS.map((s) => (
-              <div key={s.label}>
+              // Values sit on one baseline even when a label wraps to two lines.
+              <div key={s.label} className="flex flex-col justify-between">
                 <dt className="stat-label">{s.label}</dt>
                 <dd className="text-xl font-semibold text-ink mt-1 font-mono">{s.value}</dd>
               </div>

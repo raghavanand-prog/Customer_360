@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
-import type { AnalyticsSummary } from "../lib/types";
-import { useReveal } from "../lib/motion";
+import type { AnalyticsSummary, PipelineRun } from "../lib/types";
+import { useMeter, useReveal } from "../lib/motion";
 import {
   AnimatedNumber,
   EmptyState,
@@ -14,11 +14,16 @@ import {
   SkeletonTiles,
   Skeleton,
   StatTile,
+  StatusDot,
   TONE_TEXT,
+  formatCompactCurrency,
   formatCurrency,
+  formatDateTime,
+  formatDuration,
   formatScore,
   scoreLabel,
   scoreTone,
+  type Tone,
 } from "../components/Common";
 import { Icon } from "../components/Icons";
 
@@ -28,6 +33,7 @@ function pct(part: number, total: number): string {
 }
 
 function CustomerBaseCard({ data }: { data: AnalyticsSummary }) {
+  const sweepRef = useMeter<HTMLDivElement>(data.total_customers, 220);
   const other = Math.max(0, data.total_customers - data.active_customers - data.at_risk_customers);
   const parts = [
     { label: "Active", value: data.active_customers, bar: "bg-accent", dot: "bg-accent" },
@@ -47,13 +53,16 @@ function CustomerBaseCard({ data }: { data: AnalyticsSummary }) {
         </Link>
       </div>
       <div
-        className="mt-5 flex h-2 w-full overflow-hidden rounded-full bg-white/[0.05]"
+        className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.05]"
         role="img"
         aria-label={parts.map((p) => `${p.label} ${pct(p.value, data.total_customers)}`).join(", ")}
       >
-        {parts.map((p) => (
-          <span key={p.label} className={`${p.bar} h-full first:rounded-l-full last:rounded-r-full`} style={{ width: pct(p.value, data.total_customers) }} />
-        ))}
+        {/* One sweep for the whole distribution, so the bands read as parts of a single total. */}
+        <div ref={sweepRef} className="flex h-full w-full origin-left">
+          {parts.map((p) => (
+            <span key={p.label} className={`${p.bar} h-full`} style={{ width: pct(p.value, data.total_customers) }} />
+          ))}
+        </div>
       </div>
       <dl className="mt-4 grid grid-cols-3 gap-3">
         {parts.map((p) => (
@@ -111,8 +120,81 @@ function DataHealthCard({ data }: { data: AnalyticsSummary }) {
   );
 }
 
+const STATUS_DOT: Record<string, Tone> = { succeeded: "good", completed: "good", running: "info", failed: "bad", error: "bad" };
+
+/** Latest runs from the same endpoint (and query cache) the Pipeline Runs screen uses. */
+function RecentRunsCard() {
+  const runs = useQuery({
+    queryKey: ["pipeline-runs"],
+    queryFn: async () => (await api.get<{ items: PipelineRun[] }>("/pipeline/runs")).data.items,
+  });
+  const recent = runs.data?.slice(0, 4) ?? [];
+  const latest = recent[0];
+
+  return (
+    <section data-reveal className="card p-5 lg:col-span-2 xl:col-span-1 flex flex-col">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="section-title">Recent pipeline runs</h2>
+          <p className="text-xs text-ink-faint mt-0.5">
+            {latest ? (
+              <>
+                Latest run <span className={TONE_TEXT[STATUS_DOT[latest.status] ?? "neutral"]}>{latest.status}</span>
+                {latest.duration_ms !== null && <> in {formatDuration(latest.duration_ms)}</>}.
+              </>
+            ) : (
+              "Ingestion through segmentation, newest first."
+            )}
+          </p>
+        </div>
+        <Link to="/pipeline" className="btn-ghost shrink-0">
+          All runs
+          <Icon.ChevronRight size={12} />
+        </Link>
+      </div>
+      {runs.isLoading && (
+        <Loading label="Loading recent runs">
+          <div className="mt-4 space-y-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        </Loading>
+      )}
+      {runs.isError && (
+        <p role="alert" className="mt-4 text-xs text-ink-faint">
+          Could not load pipeline runs.{" "}
+          <button onClick={() => runs.refetch()} className="text-ink-muted hover:text-ink underline underline-offset-2">
+            Retry
+          </button>
+        </p>
+      )}
+      {runs.data && recent.length === 0 && <p className="mt-4 text-xs text-ink-faint">No pipeline runs yet.</p>}
+      {recent.length > 0 && (
+        <ol className="mt-3 -mx-2 flex-1">
+          {recent.map((r) => (
+            <li key={r.run_id}>
+              <Link
+                to="/pipeline"
+                className="flex items-center gap-3 rounded-md px-2 py-2 text-xs hover:bg-white/[0.03] transition-colors"
+              >
+                <StatusDot tone={STATUS_DOT[r.status] ?? "neutral"} pulse={r.status === "running"} />
+                <span className="font-mono text-ink w-10 shrink-0">#{r.run_id}</span>
+                <span className="text-ink-faint truncate flex-1 min-w-0">
+                  {formatDateTime(r.started_at)} · {r.dataset_size}
+                </span>
+                <span className="tabular-nums text-ink-muted shrink-0">{formatDuration(r.duration_ms)}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 export default function Overview() {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["analytics-summary"],
     queryFn: async () => (await api.get<AnalyticsSummary>("/analytics/summary")).data,
   });
@@ -131,18 +213,25 @@ export default function Overview() {
             </div>
           </Loading>
         )}
-        {isError && <ErrorState message="Could not load the platform summary." onRetry={() => refetch()} />}
+        {isError && <ErrorState message="Could not load the platform summary." error={error} onRetry={() => refetch()} retrying={isFetching} />}
         {data && (
           <div ref={revealRef} className="space-y-4">
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-              <StatTile label="Total customers" count={data.total_customers} emphasis />
-              <StatTile label="Revenue" count={data.total_revenue} format={formatCurrency} emphasis />
+              <StatTile
+                label="Total customers"
+                count={data.total_customers}
+                emphasis
+                sub={data.total_customers ? `${pct(data.active_customers, data.total_customers)} active` : undefined}
+              />
+              {/* Compact headline, exact figure underneath: scannable without losing precision. */}
+              <StatTile label="Revenue" count={data.total_revenue} format={formatCompactCurrency} sub={formatCurrency(data.total_revenue)} emphasis />
               <StatTile label="Orders" count={data.total_orders} emphasis />
               <StatTile label="Average order value" count={data.avg_aov} format={formatCurrency} emphasis />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               <CustomerBaseCard data={data} />
               <DataHealthCard data={data} />
+              <RecentRunsCard />
             </div>
           </div>
         )}
