@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { lockScroll, reveal, scrollToTop, slideTo } from "../lib/motion";
+import { animate } from "animejs/animation";
+import { EASE_SLOW, lockScroll, prefersReducedMotion, scrollToTop, slideTo } from "../lib/motion";
 import { RouteProgress } from "./Motion";
 import { SidebarStatus } from "./OverviewPanels";
 import { Icon } from "./Icons";
@@ -119,8 +120,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 h-14 flex items-center gap-2.5 border-b border-surface-border shrink-0">
         <BrandMark />
         <div className="min-w-0">
-          <div className="text-sm font-semibold tracking-tight text-ink leading-none">Customer360</div>
-          <div className="text-2xs text-ink-faint mt-1 leading-none">Data Platform Console</div>
+          <div className="font-display text-[17px] uppercase tracking-[0.18em] text-ink leading-none">Customer360</div>
+          <div className="font-serif italic text-[13px] text-ink-faint mt-1 leading-none">Data platform console</div>
         </div>
       </div>
       <nav aria-label="Primary" className="flex-1 py-3 overflow-y-auto">
@@ -156,7 +157,21 @@ export default function Shell() {
   useLayoutEffect(() => {
     scrollToTop();
     if (!pageRef.current) return;
-    return reveal([pageRef.current], { distance: 16, duration: 700 });
+    const el = pageRef.current;
+    if (prefersReducedMotion()) return;
+    el.style.opacity = "0";
+    const a = animate(el, {
+      opacity: [0, 1],
+      duration: 900,
+      ease: EASE_SLOW,
+      onComplete: () => {
+        el.style.opacity = "";
+      },
+    });
+    return () => {
+      a.cancel();
+      el.style.opacity = "";
+    };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -194,7 +209,7 @@ export default function Shell() {
       <div className="lg:hidden sticky top-0 z-30 h-14 flex items-center justify-between px-4 border-b border-surface-border bg-surface-raised/95 backdrop-blur supports-[backdrop-filter]:bg-surface-raised/80">
         <div className="flex items-center gap-2.5">
           <BrandMark size="sm" />
-          <span className="text-sm font-semibold tracking-tight text-ink">Customer360</span>
+          <span className="font-display text-base uppercase tracking-[0.18em] text-ink">Customer360</span>
         </div>
         <button
           ref={menuButtonRef}
@@ -237,7 +252,11 @@ export default function Shell() {
         </div>
       </div>
 
-      <main id="main" tabIndex={-1} className="flex-1 min-w-0 focus:outline-none">
+      <main id="main" tabIndex={-1} className="relative isolate flex-1 min-w-0 overflow-x-clip focus:outline-none">
+        {/* Warm light drifting slowly across the top of every page. */}
+        <div className="absolute inset-x-0 top-0 h-[900px] overflow-hidden -z-10 pointer-events-none" aria-hidden="true">
+          <div className="light-leak -top-[300px] -left-[200px]" />
+        </div>
         <div key={location.pathname} ref={pageRef}>
           <Suspense fallback={<PageFallback />}>
             <Outlet />

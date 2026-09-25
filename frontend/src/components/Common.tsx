@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useCountUp, useMeter } from "../lib/motion";
+import { useCountUp, useHairline, useMeter } from "../lib/motion";
 import { Icon } from "./Icons";
 import { SplitHeading } from "./Motion";
 
@@ -46,10 +46,11 @@ export function formatDuration(ms: number | null | undefined): string {
 
 // ---------------------------------------------------------------- tones
 
-export type Tone = "good" | "warn" | "bad" | "neutral" | "info";
+export type Tone = "good" | "warn" | "bad" | "neutral" | "info" | "brand";
 
 export const TONE_TEXT: Record<Tone, string> = {
-  good: "text-accent",
+  good: "text-positive",
+  brand: "text-accent",
   warn: "text-warn",
   bad: "text-danger",
   neutral: "text-ink-muted",
@@ -57,7 +58,8 @@ export const TONE_TEXT: Record<Tone, string> = {
 };
 
 export const TONE_BG: Record<Tone, string> = {
-  good: "bg-accent",
+  good: "bg-positive",
+  brand: "bg-accent",
   warn: "bg-warn",
   bad: "bg-danger",
   neutral: "bg-ink-faint",
@@ -65,7 +67,8 @@ export const TONE_BG: Record<Tone, string> = {
 };
 
 const TONE_BADGE: Record<Tone, string> = {
-  good: "bg-accent/10 text-accent",
+  good: "bg-positive/10 text-positive",
+  brand: "bg-accent/10 text-accent",
   warn: "bg-warn/10 text-warn",
   bad: "bg-danger/10 text-danger",
   neutral: "bg-white/[0.06] text-ink-muted",
@@ -98,11 +101,12 @@ export function PageHeader({
   actions?: React.ReactNode;
   crumbs?: { label: string; to?: string }[];
 }) {
+  const lineRef = useHairline<HTMLSpanElement>(true, 500);
   return (
-    <header className="px-4 sm:px-6 lg:px-8 pt-5 pb-5 border-b border-surface-border">
+    <header className="relative px-4 sm:px-6 lg:px-10 pt-8 pb-8">
       {crumbs && crumbs.length > 0 && (
-        <nav aria-label="Breadcrumb" className="mb-2">
-          <ol className="flex items-center gap-1 text-xs text-ink-faint">
+        <nav aria-label="Breadcrumb" className="mb-3">
+          <ol className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.22em] text-ink-faint">
             {crumbs.map((c, i) => (
               <li key={i} className="flex items-center gap-1 min-w-0">
                 {i > 0 && <Icon.ChevronRight size={12} className="shrink-0 opacity-60" />}
@@ -111,7 +115,7 @@ export function PageHeader({
                     {c.label}
                   </Link>
                 ) : (
-                  <span className="text-ink-muted truncate font-mono" aria-current="page">
+                  <span className="text-ink-muted truncate font-mono normal-case tracking-normal text-xs" aria-current="page">
                     {c.label}
                   </span>
                 )}
@@ -123,20 +127,21 @@ export function PageHeader({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0" data-parallax="0.35" data-parallax-fade>
           {typeof title === "string" ? (
-            <SplitHeading key={title} text={title} className="text-xl sm:text-2xl font-semibold text-ink tracking-tight" />
+            <SplitHeading key={title} text={title} className="font-serif font-light text-ink text-[clamp(34px,4vw,56px)] leading-none" />
           ) : (
-            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">{title}</h1>
+            <h1 className="font-serif font-light text-ink text-[clamp(34px,4vw,56px)] leading-none">{title}</h1>
           )}
-          {subtitle && <p className="text-sm text-ink-muted mt-1 max-w-2xl">{subtitle}</p>}
+          {subtitle && <p className="text-sm text-ink-muted mt-3 max-w-2xl leading-relaxed">{subtitle}</p>}
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+        {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}
       </div>
+      <span ref={lineRef} className="hairline absolute left-0 right-0 bottom-0" aria-hidden="true" />
     </header>
   );
 }
 
 export function PageBody({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`px-4 sm:px-6 lg:px-8 py-6 ${className}`}>{children}</div>;
+  return <div className={`px-4 sm:px-6 lg:px-10 py-8 ${className}`}>{children}</div>;
 }
 
 export function SectionHeader({
@@ -153,7 +158,7 @@ export function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3 mb-4">
       <div className="flex items-baseline gap-2.5 min-w-0">
-        {index && <span className="font-mono text-2xs text-accent/70 tabular-nums">{index}</span>}
+        {index && <span className="font-serif italic text-sm text-accent/80">{index}</span>}
         <div className="min-w-0">
           <h2 className="section-title">{title}</h2>
           {description && <p className="text-xs text-ink-faint mt-0.5">{description}</p>}
@@ -224,10 +229,10 @@ export function StatTile({
   className?: string;
 }) {
   return (
-    <div data-reveal-item data-reveal className={`card px-4 py-3.5 min-w-0 ${className}`}>
+    <div data-reveal-item data-reveal className={`card tile px-5 py-5 min-w-0 ${className}`}>
       <div className="stat-label leading-snug">{label}</div>
       <div
-        className={`mt-1.5 font-semibold tracking-tight tabular-nums leading-tight break-words ${emphasis ? "text-lg sm:text-2xl lg:text-xl xl:text-2xl" : "text-base sm:text-lg"} ${
+        className={`mt-3 serif-num font-light leading-none ${count !== undefined ? "whitespace-nowrap" : "break-words"} ${emphasis ? "tile-value" : "tile-value-sm"} ${
           tone ? TONE_TEXT[tone] : "text-ink"
         }`}
       >

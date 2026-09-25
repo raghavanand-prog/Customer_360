@@ -71,27 +71,25 @@ export default function Login() {
           aria-hidden="true"
         />
         <IdentityGraphCanvas className="absolute inset-0 h-full w-full motion-reduce:hidden" />
-        <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(45,212,167,0.07),transparent_55%)]"
-          aria-hidden="true"
-        />
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="light-leak -top-[250px] -left-[250px]" />
+        </div>
 
         <div className="relative z-10 px-14 pt-14">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-accent" />
+            <div className="h-7 w-7 rounded-full border border-accent/50 flex items-center justify-center">
+              <div className="h-1.5 w-1.5 rounded-full bg-accent" />
             </div>
-            <span className="text-sm font-semibold tracking-tight text-ink">Customer360</span>
+            <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer360</span>
           </div>
         </div>
 
         <div className="relative z-10 px-14 pb-16 max-w-xl motion-safe:animate-fade-in">
-          <SplitHeading
-            text="One canonical view of every customer, assembled from contradictory sources."
-            delay={250}
-            className="text-3xl xl:text-4xl font-semibold text-ink leading-tight tracking-tight"
-          />
-          <p className="mt-4 text-sm text-ink-muted leading-relaxed">
+          <h1 className="font-serif font-light text-ink text-[clamp(40px,4.4vw,68px)] leading-[1]">
+            <SplitHeading as="span" text="One canonical view" delay={300} className="block" />
+            <SplitHeading as="span" text="of every customer." delay={900} className="block italic text-accent" />
+          </h1>
+          <p className="mt-8 text-[15px] text-ink-muted leading-[1.8] max-w-md">
             Customer360 resolves fragmented identity across a CRM, a loyalty programme, an app,
             and orders into a single auditable customer — with every merge traceable to the rule
             and identifier that caused it, never a guess.
@@ -100,7 +98,7 @@ export default function Login() {
             {STATS.map((s) => (
               <div key={s.label}>
                 <dt className="stat-label">{s.label}</dt>
-                <dd className="text-xl font-semibold text-ink mt-1 font-mono">{s.value}</dd>
+                <dd className="serif-num font-light text-3xl text-ink mt-2">{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -118,12 +116,12 @@ export default function Login() {
               <div className="h-7 w-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center">
                 <div className="h-2 w-2 rounded-full bg-accent" />
               </div>
-              <span className="text-base font-semibold tracking-tight text-ink">Customer360</span>
+              <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer360</span>
             </div>
           </div>
 
           <div className="mb-7 text-center lg:text-left">
-            <h2 className="text-xl font-semibold text-ink">Sign in</h2>
+            <h2 className="font-serif font-light text-4xl text-ink">Sign in</h2>
             <p className="text-sm text-ink-muted mt-1.5">
               Unified Customer Data &amp; Personalization Platform
             </p>
@@ -195,7 +193,7 @@ export default function Login() {
               type="submit"
               data-magnetic
               disabled={submitting}
-              className="w-full inline-flex items-center justify-center gap-2 bg-accent text-surface font-medium rounded px-3 py-2.5 text-sm hover:bg-accent-dim active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="w-full inline-flex items-center justify-center gap-2 bg-accent text-surface font-normal uppercase tracking-[0.2em] text-[11px] rounded px-3 py-3.5 hover:bg-[#dcc49b] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {submitting && (
                 <span

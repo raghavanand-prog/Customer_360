@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -11,24 +11,29 @@
 @layer base {
   body {
     @apply bg-surface text-ink font-sans antialiased;
-    font-feature-settings: "cv11", "ss01";
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+  strong,
+  b {
+    font-weight: 500;
   }
 
   /* One consistent, visible keyboard focus treatment everywhere. Mouse
      clicks don't trigger it (focus-visible), keyboard navigation always does. */
   :focus-visible {
-    outline: 2px solid rgba(45, 212, 167, 0.7);
+    outline: 2px solid rgba(205, 178, 132, 0.7);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   ::selection {
-    background: rgba(45, 212, 167, 0.25);
+    background: rgba(205, 178, 132, 0.25);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #343a42 transparent;
+    scrollbar-color: #4d463d transparent;
   }
 }
 
@@ -53,11 +58,45 @@
   }
 
   .stat-label {
-    @apply text-[11px] uppercase tracking-[0.06em] text-ink-faint font-medium;
+    @apply text-[10.5px] uppercase tracking-[0.24em] text-ink-faint font-normal;
+  }
+
+  /* Headings: thin serif. Numbers set in serif too, with lining figures. */
+  .serif-num {
+    @apply font-serif;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  /* Stat tile numbers size themselves to the tile's own width, so long
+     currency values never wrap or clip at any breakpoint. */
+  .tile {
+    container-type: inline-size;
+  }
+  .tile-value {
+    font-size: clamp(20px, 12cqi, 40px);
+  }
+  .tile-value-sm {
+    font-size: clamp(17px, 9.5cqi, 26px);
+  }
+  .italic-accent {
+    @apply font-serif italic font-light text-accent;
+  }
+
+  /* Hairline divider that draws outward from its centre (see useHairline). */
+  .hairline {
+    @apply block h-px w-full origin-center;
+    background: linear-gradient(90deg, transparent, rgba(205, 178, 132, 0.45) 20%, rgba(205, 178, 132, 0.45) 80%, transparent);
+  }
+
+  /* Slow warm glow that drifts across a region, like light through glass. */
+  .light-leak {
+    @apply pointer-events-none absolute -z-0 rounded-full motion-safe:animate-light-leak;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, hsla(38, 60%, 60%, 0.08), transparent 65%);
   }
 
   .section-title {
-    @apply text-sm font-semibold text-ink tracking-tight;
+    @apply font-serif text-xl font-normal text-ink leading-tight;
   }
 
   /* Buttons */
@@ -72,16 +111,24 @@
     }
   }
   .btn-primary {
-    @apply btn bg-accent text-surface hover:bg-[#3ee0b3];
+    @apply btn bg-accent text-surface font-normal uppercase text-[11px] tracking-[0.2em] px-5 hover:bg-[#dcc49b];
   }
   .btn-secondary {
     @apply btn border border-surface-border bg-surface-raised text-ink-muted hover:text-ink hover:border-surface-strong;
   }
   .btn-accent-soft {
-    @apply btn bg-accent/10 text-accent border border-accent/20 hover:bg-accent/15 hover:border-accent/40;
+    @apply btn bg-transparent text-accent border border-accent/35 uppercase text-[11px] tracking-[0.2em] font-normal px-4 hover:bg-accent/10 hover:border-accent/60;
   }
+  /* Text button with a thin underline that draws in on hover. */
   .btn-ghost {
-    @apply btn px-2 py-1 text-xs text-ink-faint hover:text-ink hover:bg-white/[0.04];
+    @apply btn relative px-0 py-1 text-[10.5px] uppercase tracking-[0.22em] font-normal text-ink-muted hover:text-accent;
+  }
+  .btn-ghost::after {
+    content: "";
+    @apply absolute left-0 right-0 bottom-0 h-px bg-accent/70 origin-left scale-x-0 transition-transform duration-500 ease-out-quart;
+  }
+  .btn-ghost:hover::after {
+    @apply scale-x-100;
   }
 
   .input {
@@ -92,10 +139,10 @@
 
   /* Tables */
   table.data-table {
-    @apply w-full text-sm border-collapse tabular-nums;
+    @apply w-full text-sm border-collapse tabular-nums font-normal;
   }
   table.data-table th {
-    @apply text-left text-[11px] uppercase tracking-[0.06em] text-ink-faint font-medium px-4 py-2.5
+    @apply text-left text-[10.5px] uppercase tracking-[0.2em] text-ink-faint font-normal px-4 py-3
       border-b border-surface-border bg-white/[0.015] whitespace-nowrap;
   }
   table.data-table td {
@@ -118,7 +165,7 @@
   table.data-table tbody tr.row-link:hover td:first-child,
   table.data-table tbody tr.row-link:focus-visible td:first-child,
   table.data-table tbody tr.row-selected td:first-child {
-    box-shadow: inset 2px 0 0 0 #2dd4a7;
+    box-shadow: inset 2px 0 0 0 #cdb284;
   }
   table.data-table tbody tr.row-link:focus-visible {
     outline: none;
@@ -165,7 +212,7 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.4s ease;
-    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(45, 212, 167, 0.07), transparent 45%);
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(205, 178, 132, 0.07), transparent 45%);
   }
   html[data-cursor="on"] .card:hover::after,
   html[data-cursor="on"] .card-interactive:hover::after {
@@ -204,14 +251,14 @@ html[data-cursor="on"] .cursor-dot {
   width: 34px;
   height: 34px;
   margin: -17px 0 0 -17px;
-  border: 1px solid rgba(45, 212, 167, 0.45);
+  border: 1px solid rgba(205, 178, 132, 0.45);
 }
 .cursor-ring[data-state="hover"] {
   width: 54px;
   height: 54px;
   margin: -27px 0 0 -27px;
-  background: rgba(45, 212, 167, 0.07);
-  border-color: rgba(45, 212, 167, 0.7);
+  background: rgba(205, 178, 132, 0.07);
+  border-color: rgba(205, 178, 132, 0.7);
 }
 .cursor-ring[data-pressed] {
   width: 26px;
@@ -222,7 +269,7 @@ html[data-cursor="on"] .cursor-dot {
   width: 5px;
   height: 5px;
   margin: -2.5px 0 0 -2.5px;
-  background: #2dd4a7;
+  background: #cdb284;
 }
 .cursor-ring[data-state="text"],
 .cursor-dot[data-state="text"],

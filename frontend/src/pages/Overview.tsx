@@ -31,7 +31,7 @@ function pct(part: number, total: number): string {
 function CustomerBaseCard({ data }: { data: AnalyticsSummary }) {
   const other = Math.max(0, data.total_customers - data.active_customers - data.at_risk_customers);
   const parts = [
-    { label: "Active", value: data.active_customers, bar: "bg-accent", dot: "bg-accent" },
+    { label: "Active", value: data.active_customers, bar: "bg-positive", dot: "bg-positive" },
     { label: "At risk", value: data.at_risk_customers, bar: "bg-warn", dot: "bg-warn" },
     { label: "Other bands", value: other, bar: "bg-white/15", dot: "bg-ink-faint" },
   ];
@@ -63,7 +63,7 @@ function CustomerBaseCard({ data }: { data: AnalyticsSummary }) {
               <span className={`h-1.5 w-1.5 rounded-full ${p.dot}`} aria-hidden="true" />
               {p.label}
             </dt>
-            <dd className="mt-1 text-base font-semibold text-ink">
+            <dd className="mt-1 serif-num font-light text-3xl text-ink">
               <AnimatedNumber value={p.value} />
             </dd>
             <dd className="text-xs text-ink-faint tabular-nums">{pct(p.value, data.total_customers)}</dd>
@@ -89,7 +89,7 @@ function DataHealthCard({ data }: { data: AnalyticsSummary }) {
         </Link>
       </div>
       <div className="mt-5 flex items-end justify-between gap-3">
-        <div className={`text-3xl font-semibold tracking-tight ${TONE_TEXT[tone]}`}>
+        <div className={`serif-num font-light text-5xl ${TONE_TEXT[tone]}`}>
           {data.dq_score !== null && data.dq_score !== undefined ? <AnimatedNumber value={data.dq_score} format={formatScore} /> : "—"}
           <span className="text-sm font-normal text-ink-faint ml-1">/ 100</span>
         </div>
