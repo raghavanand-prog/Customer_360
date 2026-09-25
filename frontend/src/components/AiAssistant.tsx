@@ -6,7 +6,7 @@ import { createTimeline } from "animejs/timeline";
 import { stagger } from "animejs/utils";
 import { api, errorMessage } from "../lib/api";
 import type { AiAskResponse, AiSourceRef, AiStatus } from "../lib/types";
-import { EASE_OUT, prefersReducedMotion, useReducedMotion } from "../lib/motion";
+import { EASE_OUT, prefersReducedMotion, scrollToElement, useReducedMotion } from "../lib/motion";
 import { Icon } from "./Icons";
 import { StatusDot } from "./Common";
 
@@ -315,7 +315,7 @@ export function AiAssistantPanel({ customerId, ref }: { customerId?: string; ref
 
   useImperativeHandle(ref, () => ({
     focus() {
-      sectionRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+      if (sectionRef.current) scrollToElement(sectionRef.current);
       inputRef.current?.focus({ preventScroll: true });
     },
   }));
@@ -399,7 +399,7 @@ export function AiAssistantPanel({ customerId, ref }: { customerId?: string; ref
         )}
       </div>
 
-      <div ref={logRef} role="log" aria-live="polite" aria-label="Assistant conversation" className="max-h-[36rem] overflow-y-auto px-4 sm:px-5 py-4 space-y-6">
+      <div ref={logRef} data-lenis-prevent role="log" aria-live="polite" aria-label="Assistant conversation" className="max-h-[36rem] overflow-y-auto px-4 sm:px-5 py-4 space-y-6">
         {turns.length === 0 && !loading && (
           <div>
             <div className="text-xs text-ink-faint mb-2">Suggested questions</div>

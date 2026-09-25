@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { reveal, slideTo } from "../lib/motion";
+import { lockScroll, reveal, scrollToTop, slideTo } from "../lib/motion";
+import { RouteProgress } from "./Motion";
 import { Icon } from "./Icons";
 import { SkeletonTiles, SkeletonTable, Skeleton } from "./Common";
 
@@ -151,9 +152,9 @@ export default function Shell() {
   // Route change: reset scroll, and a short fade/rise so navigation reads as
   // a deliberate change of context rather than a flash of new content.
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
+    scrollToTop();
     if (!pageRef.current) return;
-    return reveal([pageRef.current], { distance: 6, duration: 320 });
+    return reveal([pageRef.current], { distance: 16, duration: 700 });
   }, [location.pathname]);
 
   useEffect(() => {
@@ -163,17 +164,18 @@ export default function Shell() {
     };
     const menuButton = menuButtonRef.current;
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    lockScroll(true);
     drawerRef.current?.querySelector<HTMLElement>("a")?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      lockScroll(false);
       menuButton?.focus();
     };
   }, [drawerOpen]);
 
   return (
     <div className="min-h-screen lg:flex">
+      <RouteProgress routeKey={location.pathname} />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-surface-raised focus:text-ink focus:border focus:border-accent/50 text-sm"
@@ -214,6 +216,7 @@ export default function Shell() {
         <div
           id="mobile-nav"
           ref={drawerRef}
+          data-lenis-prevent
           role="dialog"
           aria-modal="true"
           aria-label="Navigation"
