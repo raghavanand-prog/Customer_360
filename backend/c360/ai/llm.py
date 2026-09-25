@@ -127,11 +127,11 @@ class AnthropicProvider:
         return LLMResponse(text=text, provider=self.name, model=self._model, configured=True, raw=data)
 
     def stream(self, system: str, messages: list[LLMMessage]) -> Iterator[str]:
-        # SSE token streaming against the real API is implemented at the
-        # transport level in c360/api/v1/ai.py (which reads this provider's
-        # raw HTTPS response line-by-line); this convenience method returns
-        # the full response in one piece for callers that don't need
-        # incremental tokens, since it delegates to `generate`.
+        # No SSE/streaming endpoint exists in c360/api/v1/ai.py -- streaming
+        # is explicitly out of scope for this phase (see ADR in
+        # docs/PROJECT_DECISIONS.md). This method exists only to satisfy the
+        # LLMProvider protocol's shape for a future streaming endpoint; it
+        # currently just yields the full non-streamed response once.
         yield self.generate(system, messages).text
 
     def structured_generate(self, system: str, messages: list[LLMMessage], schema: dict) -> dict:

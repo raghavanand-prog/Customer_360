@@ -77,6 +77,16 @@ Full detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) ·
 - **Operations console** — 9 screens (login, overview, customer search,
   Customer 360, segments + detail, analytics, data quality, pipeline runs,
   system health) on a cohesive enterprise design system.
+- **Customer360 Intelligence Assistant** — a RAG + tool-calling assistant on
+  the Customer 360 page: real project documentation (architecture, DQ
+  rules, segment definitions) is chunked and retrieved via pgvector cosine
+  similarity; a deterministic, keyword-routed controlled agent (not an
+  autonomous LLM-driven planner) calls 8 allowlisted tools that reuse the
+  existing repository functions, RBAC, and PII masking. No LLM API key is
+  configured on the public deployment, so answers honestly report
+  "AI provider not configured" rather than fabricating a response — see
+  [`docs/AI_SECURITY.md`](docs/AI_SECURITY.md) and
+  [`docs/AI_EVALUATION.md`](docs/AI_EVALUATION.md).
 
 ## Verified Results
 
@@ -89,7 +99,7 @@ updated — none are estimated or carried over from memory.
 | Identity resolution — pairwise precision | **0.994** | [`benchmarks/IDENTITY_EVAL.md`](benchmarks/IDENTITY_EVAL.md) |
 | Identity resolution — pairwise recall | **0.857** | same |
 | Identity resolution — F1 | **0.920** | same |
-| Automated tests passing | **25 / 25** | `backend/tests/` |
+| Automated tests passing | **30 / 30** (16 additional DB-gated tests skip without a live database, incl. AI retrieval/tool/RBAC tests) | `backend/tests/`, verified this session (`pytest tests/ -q`) |
 | Serving tables | **34** | [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) |
 | Data-quality rules / dimensions | **40 rules / 6 dimensions** | `config/dq_rules.yaml` |
 | Platform DQ score (`small` profile, seed 20260922) | **98.8 / 100** | live-verified, `/api/v1/quality/summary` |
@@ -145,7 +155,8 @@ Full instructions, including Docker Compose: [`docs/SETUP.md`](docs/SETUP.md).
 |---|---|
 | Frontend | **Live** — https://customer360-console.vercel.app/ |
 | Backend (FastAPI) | **Live** — https://customer360-api.vercel.app — `/api/v1/health` returns `200`; auth/RBAC guard verified live (`401` with no token) |
-| Database | **Provisioned, schema not yet loaded** — Neon Postgres (free tier), connected to both Vercel projects. Migrations + the data pipeline still need to be run once, locally, against the connection string (never shared with this session). Exact commands: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
+| Database | **Live and loaded** — Neon Postgres, connected to both Vercel projects; all migrations applied (through `0003_ai_knowledge`), pipeline data and the 69-chunk AI knowledge base both loaded and verified live. Details: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
+| AI provider (LLM) | **Not configured** — no `ANTHROPIC_API_KEY` set on the public deployment; `/api/v1/ai/ask` honestly reports this rather than fabricating an answer |
 
 ## Research Paper
 
@@ -167,6 +178,9 @@ results: [`docs/research-paper/Customer360_IEEE_Paper.pdf`](docs/research-paper/
 | [`docs/DATA_PIPELINE.md`](docs/DATA_PIPELINE.md) | Stage-by-stage pipeline detail, Spark mechanics |
 | [`docs/PROJECT_DECISIONS.md`](docs/PROJECT_DECISIONS.md) | ADRs, scope reductions, honest gaps |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | What was built, in order |
+| [`docs/AI_SECURITY.md`](docs/AI_SECURITY.md) | AI assistant threat model, controls, known gaps |
+| [`docs/AI_EVALUATION.md`](docs/AI_EVALUATION.md) | AI assistant evaluation methodology and real results |
+| [`docs/ADOBE_JD_ALIGNMENT.md`](docs/ADOBE_JD_ALIGNMENT.md) | Requirement-by-requirement evidence mapping |
 | [`benchmarks/IDENTITY_EVAL.md`](benchmarks/IDENTITY_EVAL.md) | Identity resolution precision/recall |
 | [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md) | Measured pipeline/API timings |
 
@@ -189,7 +203,13 @@ Stated plainly rather than left implicit (full detail in
 - `medium` (50k-person) and `large` (500k-person) data profiles were not
   generated or benchmarked — all measured numbers are from the `small`
   (1,000-person) profile.
-- The backend is not yet publicly deployed (see above).
+- The AI assistant's embedding is a deterministic hashed lexical technique,
+  not a trained semantic embedding model, and no LLM provider is
+  configured on the public deployment — see "Customer360 Intelligence
+  Assistant" above and `docs/AI_EVALUATION.md` for what that does and
+  doesn't measure.
+- SSE streaming for the AI assistant was deliberately not implemented this
+  phase (see `docs/PROJECT_DECISIONS.md`).
 
 Built against the full specification in
 [`PROJECT_PLAN.md`](PROJECT_PLAN.md) for an Adobe Domain 3
