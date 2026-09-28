@@ -68,17 +68,23 @@ def refresh_token(body: RefreshRequest, db: Session = Depends(get_db), settings:
         raise ApiError(401, "token_reuse_detected", "Refresh token reuse detected; session revoked")
 
     user_id = int(payload["sub"])
+    # Refresh tokens carry only the user id, so identity comes from the
+    # database: this keeps email/name on the restored session (and in audit
+    # logs written with the new access token) and refuses deactivated users.
+    user = users_repo.get_user_by_id(db, user_id)
+    if not user or not user["is_active"]:
+        raise ApiError(401, "unauthenticated", "User not found or inactive")
+    email = user["email"]
     roles = users_repo.get_user_roles(db, user_id)
-    email = payload.get("email")
     users_repo.revoke_token(db, payload["jti"])
-    new_access = create_access_token(settings, user_id, email or "", roles)
+    new_access = create_access_token(settings, user_id, email, roles)
     new_refresh, new_jti, family = create_refresh_token(settings, user_id, family_id=stored["family_id"])
     expires_at = decode_token(settings, new_refresh)["exp"]
     users_repo.store_refresh_token(db, new_jti, user_id, hashlib.sha256(new_refresh.encode()).hexdigest(), family,
                                     datetime.fromtimestamp(expires_at, tz=timezone.utc))
     return TokenResponse(access_token=new_access, refresh_token=new_refresh,
                           expires_in=settings.access_token_ttl_minutes * 60,
-                          user={"id": user_id, "email": email, "full_name": None, "roles": roles})
+                          user={"id": user_id, "email": email, "full_name": user["full_name"], "roles": roles})
 
 
 @router.post("/logout", status_code=204)
