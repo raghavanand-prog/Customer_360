@@ -182,7 +182,7 @@ export function AnimatedNumber({
 }) {
   const ref = useCountUp(value, format);
   return (
-    <span ref={ref} className={`tabular-nums ${className}`}>
+    <span ref={ref} className={`lining-nums tabular-nums ${className}`}>
       {value === null || value === undefined ? "—" : format(value)}
     </span>
   );
