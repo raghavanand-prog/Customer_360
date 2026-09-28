@@ -60,7 +60,7 @@ function CompositionPyramid({ data }: { data: CustomerProfile }) {
   const m = data.metrics;
   const sources = Array.from(new Set(data.identity.identities.map((i) => i.source_system.toUpperCase())));
   const heart = [
-    m?.rfm_segment,
+    m?.rfm_segment ? `rfm ${m.rfm_segment}` : null,
     m?.engagement_score !== null && m?.engagement_score !== undefined ? `engagement ${m.engagement_score}` : null,
     m?.churn_risk_band ? m.churn_risk_band.replace(/_/g, " ") : null,
   ].filter(Boolean) as string[];
@@ -247,7 +247,7 @@ export default function CustomerProfilePage() {
                     <tr key={o.order_id}>
                       <td className="font-mono text-xs text-ink-muted">{o.order_id}</td>
                       <td className="text-ink-muted">{formatDate(o.order_ts)}</td>
-                      <td className="capitalize">{o.order_status}</td>
+                      <td className="capitalize">{o.order_status.toLowerCase()}</td>
                       <td className="capitalize text-ink-muted">{o.channel ?? "—"}</td>
                       <td className="text-right">{formatCurrency(o.revenue_amount)}</td>
                     </tr>

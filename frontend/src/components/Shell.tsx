@@ -120,7 +120,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 h-14 flex items-center gap-2.5 border-b border-surface-border shrink-0">
         <BrandMark />
         <div className="min-w-0">
-          <div className="font-display text-[17px] uppercase tracking-[0.18em] text-ink leading-none">Customer360</div>
+          <div className="font-display text-[17px] uppercase tracking-[0.18em] text-ink leading-none">Customer<span className="wordmark-num">360</span></div>
           <div className="font-serif italic text-[13px] text-ink-faint mt-1 leading-none">Data platform console</div>
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function Shell() {
       <div className="lg:hidden sticky top-0 z-30 h-14 flex items-center justify-between px-4 border-b border-surface-border bg-surface-raised/95 backdrop-blur supports-[backdrop-filter]:bg-surface-raised/80">
         <div className="flex items-center gap-2.5">
           <BrandMark size="sm" />
-          <span className="font-display text-base uppercase tracking-[0.18em] text-ink">Customer360</span>
+          <span className="font-display text-base uppercase tracking-[0.18em] text-ink">Customer<span className="wordmark-num">360</span></span>
         </div>
         <button
           ref={menuButtonRef}
