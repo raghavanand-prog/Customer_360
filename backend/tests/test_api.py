@@ -44,6 +44,20 @@ def token(client):
     return resp.json()["access_token"]
 
 
+def test_refresh_keeps_user_identity(client):
+    """/auth/refresh must return the real email (the refresh token carries
+    only the user id), and the new access token must carry it too."""
+    login = client.post("/api/v1/auth/login", json={"email": "admin@c360.local", "password": "Admin123!Pass"})
+    assert login.status_code == 200, login.text
+    resp = client.post("/api/v1/auth/refresh", json={"refresh_token": login.json()["refresh_token"]})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["user"]["email"] == "admin@c360.local"
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {body['access_token']}"})
+    assert me.status_code == 200
+    assert me.json()["email"] == "admin@c360.local"
+
+
 def test_me_returns_roles(client, token):
     resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
