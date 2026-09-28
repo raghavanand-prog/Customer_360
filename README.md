@@ -117,9 +117,14 @@ and Section X-B of the [research paper](docs/research-paper/Customer360_IEEE_Pap
 | ![Customer search](docs/screenshots/customer_search.png) Customer Search | ![Customer 360](docs/screenshots/customer_360.png) Customer 360 |
 | ![Data Quality](docs/screenshots/data_quality.png) Data Quality | ![Segments](docs/screenshots/segments.png) Segments |
 | ![Analytics](docs/screenshots/analytics.png) Analytics | ![Pipeline runs](docs/screenshots/pipeline.png) Pipeline Runs |
+| ![Intelligence Assistant](docs/screenshots/assistant.png) Intelligence Assistant (no LLM configured) | ![Login on mobile](docs/screenshots/login_mobile.png) Login, mobile |
 
-All screenshots are of the running application against real generated
-data — none are mockups.
+All screenshots are of the running application (production build, real
+FastAPI backend) against the real generated dataset in PostgreSQL — none are
+mockups or mocked API responses. The assistant screenshot shows the honest
+not-configured state: the three customer tools and the retrieved segment
+definition are real; no model-generated text is shown because no LLM key is
+set.
 
 ## Technology Stack
 

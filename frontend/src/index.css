@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -63,8 +62,13 @@
 
   /* Headings: thin serif. Numbers set in serif too, with lining figures. */
   .serif-num {
-    @apply font-serif;
-    font-variant-numeric: lining-nums tabular-nums;
+    @apply font-serif lining-nums tabular-nums;
+  }
+  /* The digits in the wordmark: Italiana's figures are small, so "360" is
+     set in Cormorant lining figures to sit at cap height. */
+  .wordmark-num {
+    @apply font-serif font-normal lining-nums;
+    letter-spacing: 0.08em;
   }
   /* Stat tile numbers size themselves to the tile's own width, so long
      currency values never wrap or clip at any breakpoint. */

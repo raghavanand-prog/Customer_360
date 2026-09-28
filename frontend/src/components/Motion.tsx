@@ -103,7 +103,7 @@ export function IntroSequence() {
         </div>
         <div className="mt-10 flex font-display uppercase text-ink text-[clamp(44px,9vw,120px)] leading-[0.9] tracking-[0.04em]" aria-hidden="true">
           {word.split("").map((c, i) => (
-            <span key={i} data-intro-char className="inline-block" style={{ opacity: 0 }}>
+            <span key={i} data-intro-char className={`inline-block ${/\d/.test(c) ? "wordmark-num" : ""}`} style={{ opacity: 0 }}>
               {c}
             </span>
           ))}

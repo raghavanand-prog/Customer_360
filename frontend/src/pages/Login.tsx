@@ -80,7 +80,7 @@ export default function Login() {
             <div className="h-7 w-7 rounded-full border border-accent/50 flex items-center justify-center">
               <div className="h-1.5 w-1.5 rounded-full bg-accent" />
             </div>
-            <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer360</span>
+            <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer<span className="wordmark-num">360</span></span>
           </div>
         </div>
 
@@ -116,7 +116,7 @@ export default function Login() {
               <div className="h-7 w-7 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center">
                 <div className="h-2 w-2 rounded-full bg-accent" />
               </div>
-              <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer360</span>
+              <span className="font-display text-lg uppercase tracking-[0.2em] text-ink">Customer<span className="wordmark-num">360</span></span>
             </div>
           </div>
 
