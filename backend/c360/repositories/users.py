@@ -10,6 +10,12 @@ def get_user_by_email(db: Session, email: str) -> dict | None:
     return dict(row) if row else None
 
 
+def get_user_by_id(db: Session, user_id: int) -> dict | None:
+    row = db.execute(text("SELECT user_id, email, full_name, is_active FROM users WHERE user_id = :uid"),
+                      {"uid": user_id}).mappings().first()
+    return dict(row) if row else None
+
+
 def get_user_roles(db: Session, user_id: int) -> list[str]:
     rows = db.execute(text("SELECT role_name FROM user_roles WHERE user_id = :uid"), {"uid": user_id}).scalars().all()
     return list(rows)
