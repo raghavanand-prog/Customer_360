@@ -24,7 +24,7 @@ committed stages.
 ## DQ engine mechanics (§9)
 
 `c360/dq/engine.py::evaluate` compiles every configured rule
-(`config/dq_rules.yaml`, 40 rules across the six dimensions) to a Spark
+(`config/dq_rules.yaml`, 38 rules across the six dimensions) to a Spark
 `Column` expression via the `RULE_REGISTRY` in `c360/dq/rules.py`, adds one
 `__passed_<rule_id>`/`__applicable_<rule_id>` column pair per rule, and
 computes the per-record `dq_failed_rules` array and `dq_status`
