@@ -6,7 +6,7 @@ import { SplitHeading } from "../components/Motion";
 
 const STATS = [
   { value: "34", label: "serving tables" },
-  { value: "40", label: "data-quality rules / 6 dimensions" },
+  { value: "38", label: "data-quality rules / 6 dimensions" },
   { value: "0.994", label: "identity precision (measured)" },
 ];
 

@@ -187,7 +187,7 @@ target, not a deployed environment.
 
 ## What would change for a real multi-instance deployment
 
-- Rate limiting (`slowapi`) needs a shared store (Redis) rather than
+- Rate limiting (`slowapi`, declared but not yet wired in) would need a shared store (Redis) rather than
   in-process state, once there is more than one API instance — noted but
   not built (`docs/SECURITY.md`).
 - The refresh-token family-revocation model already works correctly with
