@@ -28,7 +28,7 @@ Synthetic Data Generator (seeded, Python)
 Ingestion → Type & Validate → Clean & Normalise  (PySpark)
         │
         ▼
-Data Quality Engine  (40 rules / 6 dimensions, accept/warn/quarantine/reject)
+Data Quality Engine  (38 rules / 6 dimensions, accept/warn/quarantine/reject)
         │
         ▼
 Identity Resolution  (namespaced screening → ranked match rules →
@@ -56,7 +56,7 @@ Full detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) ·
 - **Multi-source ingestion** — 9 files across 3 formats (CSV, JSON Lines,
   gzip-partitioned JSON Lines), read all-string with full lineage, then
   contract-typed via `try_cast`.
-- **Configurable data quality** — 40 rules across 6 dimensions
+- **Configurable data quality** — 38 rules across 6 dimensions
   (completeness, validity, uniqueness, consistency, integrity,
   timeliness), compiled generically to Spark `Column` expressions; every
   record is classified accepted / warned / quarantined / rejected and
@@ -101,7 +101,7 @@ updated — none are estimated or carried over from memory.
 | Identity resolution — F1 | **0.920** | same |
 | Automated tests passing | **30 / 30** (16 additional DB-gated tests skip without a live database, incl. AI retrieval/tool/RBAC tests) | `backend/tests/`, verified this session (`pytest tests/ -q`) |
 | Serving tables | **34** | [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) |
-| Data-quality rules / dimensions | **40 rules / 6 dimensions** | `config/dq_rules.yaml` |
+| Data-quality rules / dimensions | **38 rules / 6 dimensions** | `config/dq_rules.yaml` |
 | Platform DQ score (`small` profile, seed 20260922) | **98.8 / 100** | live-verified, `/api/v1/quality/summary` |
 
 A ground-truth construction bug found and fixed *while producing the
