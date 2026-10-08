@@ -11,6 +11,6 @@ structlog==24.4.0
 slowapi==0.1.9
 typer==0.13.1
 numpy==1.26.4
-pandas==2.2.3
+pandas==3.0.6
 pyyaml==6.0.2
 python-dateutil==2.9.0.post0
