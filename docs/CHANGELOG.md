@@ -1,7 +1,7 @@
 # Changelog
 
 Built in dependency order in a single continuous session, each entry
-corresponding to a commit on `claude/vibrant-einstein-r1v8h1`.
+corresponding to a commit on `main`.
 
 - **Repository foundation & synthetic data generator** — seeded PCG64
   population model, purchase/session/ticket/marketing synthesis, defect
