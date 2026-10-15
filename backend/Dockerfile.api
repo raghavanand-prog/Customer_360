@@ -1,6 +1,6 @@
 # API image: deliberately does NOT install PySpark (§7.4 architectural
 # boundary -- the API must run without a Spark installation present).
-FROM python:3.11-slim AS base
+FROM python:3.14-slim AS base
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1

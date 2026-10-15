@@ -1,6 +1,6 @@
 # Pipeline image: Java + PySpark for the generator, ingestion, DQ,
 # identity resolution, aggregation, and loader stages.
-FROM python:3.11-slim AS base
+FROM python:3.14-slim AS base
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
