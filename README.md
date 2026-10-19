@@ -107,7 +107,7 @@ updated — none are estimated or carried over from memory.
 A ground-truth construction bug found and fixed *while producing the
 identity-resolution numbers* is documented honestly rather than hidden —
 see ADR-15/ADR-16 in [`docs/PROJECT_DECISIONS.md`](docs/PROJECT_DECISIONS.md)
-and Section X-B of the [research paper](docs/research-paper/Customer360_IEEE_Paper.pdf).
+and [`benchmarks/IDENTITY_EVAL.md`](benchmarks/IDENTITY_EVAL.md).
 
 ## Screenshots
 
@@ -162,12 +162,6 @@ Full instructions, including Docker Compose: [`docs/SETUP.md`](docs/SETUP.md).
 | Backend (FastAPI) | **Live** — https://customer360-api.vercel.app — `/api/v1/health` returns `200`; auth/RBAC guard verified live (`401` with no token) |
 | Database | **Live and loaded** — Neon Postgres, connected to both Vercel projects; all migrations applied (through `0003_ai_knowledge`), pipeline data and the 69-chunk AI knowledge base both loaded and verified live. Details: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 | AI provider (LLM) | **Not configured** — no `ANTHROPIC_API_KEY` set on the public deployment; `/api/v1/ai/ask` honestly reports this rather than fabricating an answer |
-
-## Research Paper
-
-An IEEE-style paper documenting the system's methodology and measured
-results: [`docs/research-paper/Customer360_IEEE_Paper.pdf`](docs/research-paper/Customer360_IEEE_Paper.pdf)
-([Markdown source](docs/research-paper/Customer360_IEEE_Paper.md), [BibTeX](docs/research-paper/references.bib)).
 
 ## Documentation
 
