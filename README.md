@@ -1,5 +1,25 @@
 # Customer360
 
+**Takes messy customer records from many sources, cleans them, works out which records belong to the same person, and shows one combined view of each customer.**
+
+Why it exists: companies often hold the same customer in several systems, with typos and duplicates. This project builds the whole data pipeline that fixes that, from raw files to a web console.
+
+**Live console: [customer360-console.vercel.app](https://customer360-console.vercel.app)** (it needs an account to sign in; the screenshots below show what is inside)
+
+## How to run
+
+1. `make venv`, then `make generate SIZE=small` (needs Python 3.11 and PostgreSQL).
+2. `make migrate`, then `make run-pipeline SIZE=small`.
+3. `make run-api` in one terminal and `cd frontend && npm install && npm run dev` in another. Full steps are in [Local Setup](#local-setup).
+
+![The Customer 360 view](docs/screenshots/customer_360.png)
+
+---
+
+## Technical details
+
+Everything below is the full write-up for engineers and reviewers.
+
 **Unified Customer Data & Personalization Platform** — an end-to-end
 customer data engineering platform: seeded synthetic data generation,
 PySpark data-quality validation, deterministic identity resolution,
